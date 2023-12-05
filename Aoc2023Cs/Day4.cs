@@ -5,14 +5,10 @@ public class Day4
     public class Card
     {
         public int number;
-        public HashSet<int> drawn = new();
-        public HashSet<int> own = new();
-        public List<int> winning = new();
-
-        public Card(int number)
-        {
-            this.number = number;
-        }
+        public HashSet<int> winning = new();
+        
+        private HashSet<int> drawn = new();
+        private HashSet<int> own = new();
 
         public Card(int number, string constLine)
         {
@@ -21,27 +17,31 @@ public class Day4
             string line = constLine.After(':');
             line = Util.SkipSpaces(line);
 
+            // read drawn numbers
             while ((line.Length > 0) && (line.First() != '|'))
             {
-                line = Util.ExtractInt(line, out var winningNumber);
-                drawn.Add(winningNumber);
+                line = Util.ExtractInt(line, out var drawnNumber);
+                drawn.Add(drawnNumber);
                 
                 line = Util.SkipSpaces(line);
             }
+            
+            // skip | and spaces
             line = line.Substring(1);
             line = Util.SkipSpaces(line);
             
+            // read own numbers
             while (line.Length > 0)
             {
-                line = Util.ExtractInt(line, out var drawnNumber);
-                own.Add(drawnNumber);
+                line = Util.ExtractInt(line, out var ownedNumbers);
+                own.Add(ownedNumbers);
                 
                 line = Util.SkipSpaces(line);
             }
 
-            HashSet<int> winningSet = drawn;
-            winningSet.IntersectWith(own);
-            winning = winningSet.ToList();
+            // determine winning numbers
+            winning = drawn;
+            winning.IntersectWith(own);
         }
     };
     
@@ -60,42 +60,20 @@ public class Day4
         }
 
         // part one
-        int resultPartOne = 0;
-        foreach (Card card in cards.Values)
-        {
-            if (card.winning.Count > 0)
-            {
-                int value = 1;
-                for (int i = 1; i < card.winning.Count; ++i)
-                {
-                    value *= 2;
-                }
-                resultPartOne += value;
-            }
-            
-            string winning = Util.MakeList(card.winning);
-            string drawn = Util.MakeList(card.drawn);
-            string own = Util.MakeList(card.own);
-            Console.WriteLine($"Card {card.number} - {card.winning.Count} winning - !{winning}! ({drawn} / {own})");
-        }
+        int resultPartOne = cards.Values.Sum(c => Util.GeometricSequence(c.winning.Count, 2));
         Console.WriteLine();
         Console.WriteLine($"Part One : {resultPartOne}");
 
         // part two
         int resultPartTwo = 0;
-        Queue<Card> cardQueue = new();
-        foreach (Card card in cards.Values)
-        {
-            cardQueue.Enqueue(card);
-        }
-        
+        Queue<Card> cardQueue = new(cards.Values);
         while (cardQueue.Count > 0)
         {
             ++resultPartTwo;            
             Card card = cardQueue.Dequeue();
             for (int i = 0; i < card.winning.Count; ++i)
             {
-                Card requeueCard = cards[card.number + 1 +i];
+                Card requeueCard = cards[card.number + 1 + i];
                 cardQueue.Enqueue(requeueCard);
             }
         }

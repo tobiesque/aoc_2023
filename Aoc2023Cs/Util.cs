@@ -65,6 +65,18 @@ public static class Util
         string inputFile = $"{day}{(test ? ".tst" : ".txt")}";
         return File.ReadLines(inputFile);
     }
+
+    public static int GeometricSequence(int n, int factor)
+    {
+        if (n == 0) return 0;
+        
+        int value = 1;
+        for (int i = 1; i < n; ++i)
+        {
+            value *= factor;
+        }
+        return value;
+    }
     
     public class MultiMap<TKey, TValue> : Dictionary<TKey, HashSet<TValue>> where TValue : class
     {

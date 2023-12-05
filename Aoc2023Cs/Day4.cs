@@ -49,18 +49,19 @@ public class Day4
     {
         var lines = Util.ReadLines("4", test: false);
 
-        List<Card> cards = new();
+        Dictionary<int, Card> cards = new();
         
         int cardNumber = 0;
         foreach (string constLine in lines)
         {
             ++cardNumber;
             Card card = new(cardNumber, constLine);
-            cards.Add(card);
+            cards.Add(card.number, card);
         }
 
+        // part one
         int resultPartOne = 0;
-        foreach (Card card in cards)
+        foreach (Card card in cards.Values)
         {
             if (card.winning.Count > 0)
             {
@@ -75,10 +76,29 @@ public class Day4
             string winning = Util.MakeList(card.winning);
             string drawn = Util.MakeList(card.drawn);
             string own = Util.MakeList(card.own);
-            Console.WriteLine($"{card.number} - !{winning}! ({drawn} / {own})");
+            Console.WriteLine($"Card {card.number} - {card.winning.Count} winning - !{winning}! ({drawn} / {own})");
         }
         Console.WriteLine();
-        
         Console.WriteLine($"Part One : {resultPartOne}");
+
+        // part two
+        int resultPartTwo = 0;
+        Queue<Card> cardQueue = new();
+        foreach (Card card in cards.Values)
+        {
+            cardQueue.Enqueue(card);
+        }
+        
+        while (cardQueue.Count > 0)
+        {
+            ++resultPartTwo;            
+            Card card = cardQueue.Dequeue();
+            for (int i = 0; i < card.winning.Count; ++i)
+            {
+                Card requeueCard = cards[card.number + 1 +i];
+                cardQueue.Enqueue(requeueCard);
+            }
+        }
+        Console.WriteLine($"Part Two : {resultPartTwo}");
     }
 }

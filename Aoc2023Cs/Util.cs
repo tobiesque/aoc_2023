@@ -31,7 +31,7 @@ public static class Util
         return s.Substring(0, positions.Min());
     }
 
-    public static string ExtractInt(string s, out int result)
+    public static string ExtractInt(this string s, out int result)
     {
         Match match = Regex.Match(s, @"\b\d*\b", RegexOptions.CultureInvariant);
         if (!match.Success || (match.Length == 0))
@@ -45,7 +45,7 @@ public static class Util
         return s.Substring(match.Length);
     }
 
-    public static string SkipSpaces(string s)
+    public static string SkipSpaces(this string s)
     {
         int spaces = 0;
         while ((s.Length > spaces) && (s[spaces] == ' '))

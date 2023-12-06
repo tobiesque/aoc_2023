@@ -45,6 +45,20 @@
         <Link>4.txt</Link>
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Content Include="..\5.tst">
+        <Link>5.tst</Link>
+      </Content>
+      <Content Include="..\5.txt">
+        <Link>5.txt</Link>
+      </Content>
+      <Content Include="..\6.tst">
+        <Link>6.tst</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\6.txt">
+        <Link>6.txt</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

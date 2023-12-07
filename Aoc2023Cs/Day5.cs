@@ -1,18 +1,27 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Text;
 
 namespace Aoc2023Cs;
 
 public class Day5
 {
+    public class SeedRange(ulong start, ulong size, ulong id)
+    {
+        public readonly ulong id = id;
+        public readonly ulong start = start;
+        public readonly ulong size = size;
+
+        public ulong min = ulong.MaxValue;
+        public ulong percent = 0;
+    }
+    
     public class RangeMaps(ulong[] seeds) : List<RangeMap>
     {
         public ulong[] seeds = seeds;
     }
     
-    public class RangeMap : List<RangeMap.Entry>
+    public class RangeMap : List<RangeMap.Range>
     {
-        public struct Entry(ulong destination, ulong source, ulong size)
+        public readonly struct Range(ulong destination, ulong source, ulong size)
         {
             public readonly ulong destination = destination;
             public readonly ulong source = source;
@@ -24,7 +33,7 @@ public class Day5
         
         public ulong Map(ulong value)
         {
-            foreach (Entry entry in this)
+            foreach (Range entry in this)
             {
                 if (entry.In(value))
                 {
@@ -36,7 +45,7 @@ public class Day5
         
         public void Add(ulong destination, ulong source, ulong size)
         {
-            Add(new Entry(destination, source, size));
+            Add(new Range(destination, source, size));
         }
     }
 
@@ -44,7 +53,7 @@ public class Day5
     {
         bool test = false;
         RangeMaps data = test ? CreateTest() : CreateNonTest();
-        ulong min = data.seeds.Min(seed => data.Aggregate(seed, (running_, rangeMap) => rangeMap.Map(running_)));
+        ulong min = Enumerable.Min(data.seeds, seed => data.Aggregate(seed, (running_, rangeMap) => rangeMap.Map(running_)));
         Console.WriteLine($"Part One: {min}");
     }
 
@@ -52,8 +61,59 @@ public class Day5
     {
         bool test = false;
         RangeMaps data = test ? CreateTest() : CreateNonTest();
-        ulong min = data.seeds.Min(seed => data.Aggregate(seed, (running_, rangeMap) => rangeMap.Map(running_)));
-        Console.WriteLine($"Part Two: {min}");
+
+        List<SeedRange> seedRanges = new();
+        for (ulong j = 0; j < (ulong)data.seeds.Length; j += 2)
+        {
+            SeedRange seedRange = new(data.seeds[j], data.seeds[j + 1], (j/2)+1);
+            seedRanges.Add(seedRange);
+        }
+
+        var options = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = 4
+        };
+
+        CancellationToken cancellationToken = new();
+        Task task = Parallel.ForEachAsync(seedRanges, (seedRange, cancellationToken) =>
+        {
+            ulong j = 0;
+            for (ulong seed = seedRange.start; seed < (seedRange.start + seedRange.size); ++seed)
+            {
+                foreach (RangeMap rangeMap in data)
+                {
+                    for (var i = 0; i < rangeMap.Count; i++)
+                    {
+                        if ((seed >= rangeMap[i].source) && (seed <= (rangeMap[i].source + rangeMap[i].size)))
+                        {
+                            seed = seed + rangeMap[i].destination - rangeMap[i].source;
+                            break;
+                        }
+                    }
+                }
+                if (seedRange.min > seed) seedRange.min = seed;
+
+                if ((++j % 10000000) == 0)
+                {
+                    seedRange.percent = (j * 100) / seedRange.size;
+                }
+
+            }
+            return new ValueTask();
+        });
+
+        while (!task.IsCompleted)
+        {
+            Thread.Sleep(1000);
+            StringBuilder progress = new();
+            foreach (SeedRange seedRange in seedRanges)
+            {
+                progress.Append($"[{seedRange.id:00}]{seedRange.percent:000}% ");
+            }
+            Console.Write($"{progress}\r");
+        }
+        
+        Console.WriteLine($"Part Two: {seedRanges.Min(sr => sr.min)}");
     }
     
     public static RangeMaps CreateTest()
@@ -62,8 +122,8 @@ public class Day5
         {
             new()
             {
-                new RangeMap.Entry( 50, 98, 2 ),
-                new RangeMap.Entry( 52, 50, 48 ),
+                new RangeMap.Range( 50, 98, 2 ),
+                new RangeMap.Range( 52, 50, 48 ),
             },
             new()
             {

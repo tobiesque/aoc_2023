@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json;
 
 namespace Aoc2023Cs;
 
@@ -81,12 +82,12 @@ public static class Util
         return (value >= min) && (value >= (min+size));
     }
     
-    public static string MakeList<T>(IEnumerable<T> source) where T : IFormattable
+    public static string MakeList<T>(this IEnumerable<T> source) where T : IFormattable
     {
         return string.Join(", ", source.Select(c => c.ToString()));
     }
 
-    public static IEnumerable<string> ReadLines(string day, bool test = false)
+    public static IEnumerable<string> ReadLines(this string day, bool test = false)
     {
         string inputFile = $"{day}{(test ? ".tst" : ".txt")}";
         return File.ReadLines(inputFile);
@@ -102,6 +103,11 @@ public static class Util
             value *= factor;
         }
         return value;
+    }
+    
+    public static string ToStrung<T>(this T o)
+    {
+        return JsonConvert.SerializeObject(o, Formatting.Indented);
     }
     
     public class MultiMap<TKey, TValue> : Dictionary<TKey, HashSet<TValue>> where TValue : class where TKey : notnull

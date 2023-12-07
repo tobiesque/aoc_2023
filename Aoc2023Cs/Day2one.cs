@@ -17,14 +17,13 @@ public class Day2one
             Console.WriteLine("Game {0}", game);
             
             string line = constLine.After(':');
-            line = Util.SkipSpaces(line);
+            line = line.SkipSpaces();
             Console.WriteLine(line);
 
             bool isValid = true;
             while (line.Length > 0)
             {
-                int amount;
-                line = Util.ExtractInt(line, out amount);
+                line = line.ExtractInt(out int amount);
                 string colorString = line.Until(',', ';');
                 line = line.Substring(colorString.Length);
                 Color color = colorString.ToEnum<Color>();

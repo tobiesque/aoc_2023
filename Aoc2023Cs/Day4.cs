@@ -15,28 +15,28 @@ public class Day4
             this.number = number;
             
             string line = constLine.After(':');
-            line = Util.SkipSpaces(line);
+            line = line.SkipSpaces();
 
             // read drawn numbers
             while ((line.Length > 0) && (line.First() != '|'))
             {
-                line = Util.ExtractInt(line, out var drawnNumber);
+                line = line.ExtractInt(out int drawnNumber);
                 drawn.Add(drawnNumber);
                 
-                line = Util.SkipSpaces(line);
+                line = line.SkipSpaces();
             }
             
             // skip | and spaces
             line = line.Substring(1);
-            line = Util.SkipSpaces(line);
+            line = line.SkipSpaces();
             
             // read own numbers
             while (line.Length > 0)
             {
-                line = Util.ExtractInt(line, out var ownedNumbers);
+                line = line.ExtractInt(out int ownedNumbers);
                 own.Add(ownedNumbers);
                 
-                line = Util.SkipSpaces(line);
+                line = line.SkipSpaces();
             }
 
             // determine winning numbers

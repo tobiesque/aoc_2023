@@ -16,15 +16,14 @@ public class Day2two
             Console.WriteLine("Game {0}", game);
             
             string line = constLine.After(':');
-            line = Util.SkipSpaces(line);
+            line = line.SkipSpaces();
             Console.WriteLine(line);
 
             int[] minCubes = { 0, 0, 0 };
             
             while (line.Length > 0)
             {
-                int amount;
-                line = Util.ExtractInt(line, out amount);
+                line = line.ExtractInt(out int amount);
                 string colorString = line.Until(',', ';');
                 line = line.Substring(colorString.Length);
                 Color color = colorString.ToEnum<Color>();

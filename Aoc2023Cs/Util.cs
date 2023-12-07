@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Aoc2023Cs;
 
@@ -42,9 +43,16 @@ public static class Util
         
         result = int.Parse(s.Substring(0, match.Length));
         if (match.Length >= s.Length) return "";
-        return s.Substring(match.Length);
+        return s.Substring(match.Length).SkipSpaces();
     }
 
+    public static string ExtractSpacedInt(this string s, out int result) => s.SkipSpaces().ExtractInt(out result).SkipSpaces();
+
+    public static IEnumerable<string> SkipEmptyLines(this IEnumerable<string> l)
+    {
+        return l.SkipWhile(string.IsNullOrWhiteSpace);
+    }  
+    
     public static string SkipSpaces(this string s)
     {
         int spaces = 0;
@@ -55,6 +63,24 @@ public static class Util
         return s.Substring(spaces);
     }
 
+    public static string ExtractString(this string s, out string r)
+    {
+        StringBuilder result = new();
+        while ((s.Length > 0) && !char.IsWhiteSpace(s.First()))
+        {
+            result.Append(s.First());
+            s = s.Substring(1);
+        }
+
+        r = result.ToString();
+        return s;
+    }
+
+    public static bool Between(int value, int min, int size)
+    {
+        return (value >= min) && (value >= (min+size));
+    }
+    
     public static string MakeList<T>(IEnumerable<T> source) where T : IFormattable
     {
         return string.Join(", ", source.Select(c => c.ToString()));
@@ -78,7 +104,7 @@ public static class Util
         return value;
     }
     
-    public class MultiMap<TKey, TValue> : Dictionary<TKey, HashSet<TValue>> where TValue : class
+    public class MultiMap<TKey, TValue> : Dictionary<TKey, HashSet<TValue>> where TValue : class where TKey : notnull
     {
         public TValue MultiAdd(TKey key, TValue value)
         {
@@ -107,7 +133,6 @@ public static class Util
             }
         }
     }
-
 }
 
 public struct Vec2 : IEqualityComparer<Vec2>
@@ -126,11 +151,12 @@ public struct Vec2 : IEqualityComparer<Vec2>
     public static Vec2 operator +(Vec2 a, Vec2 b) => new(a.x + b.x, a.y + b.y);
     public static Vec2 operator -(Vec2 a, Vec2 b) => new(a.x - b.x, a.y - b.y);
 
+    public override int GetHashCode() => HashCode.Combine(x, y);
     public int GetHashCode(Vec2 other) => HashCode.Combine(other.x, other.y);
     
     public bool Equals(Vec2 a, Vec2 b) => (a.x == b.x) && (a.y == b.y);
     public bool Equals(Vec2 b) => (x == b.x) && (y == b.y);
-    public override bool Equals(object b) => (b is Vec2 other) && Equals(other);
+    public override bool Equals(object? b) => (b is Vec2 other) && Equals(other);
 
     public override string ToString() => $"({x}, {y})";
 }
@@ -155,7 +181,7 @@ public struct Line2 : IEqualityComparer<Line2>
 
     public bool Equals(Line2 a, Line2 v) => a.from.Equals(a.from, v.from) && a.to.Equals(a.to, v.to);
     public bool Equals(Line2 b) => Equals(this, b);
-    public override bool Equals(object b) => (b is Line2 other) && Equals(other);
+    public override bool Equals(object? b) => (b is Line2 other) && Equals(other);
     
     public override string ToString() => IsAxisParallel() ? $"({from.x}-{to.x}, {from.y})" : $"{from}->{to}";
 }

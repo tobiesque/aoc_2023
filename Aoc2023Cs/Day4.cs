@@ -10,33 +10,30 @@ public class Day4
         private HashSet<int> drawn = new();
         private HashSet<int> own = new();
 
-        public Card(int number, string constLine)
+        public Card(int number, Span<char> line)
         {
             this.number = number;
             
-            string line = constLine.After(':');
-            line = line.SkipSpaces();
+            line.After(':').SkipWhiteRef();
 
             // read drawn numbers
-            while ((line.Length > 0) && (line.First() != '|'))
+            while ((line.Length > 0) && (line[0] != '|'))
             {
-                line = line.ExtractInt(out int drawnNumber);
+                line.ExtractIntRef(out int drawnNumber).SkipWhiteRef();
                 drawn.Add(drawnNumber);
-                
-                line = line.SkipSpaces();
             }
             
             // skip | and spaces
-            line = line.Substring(1);
-            line = line.SkipSpaces();
+            line.SkipRef(1);
+            line.SkipWhiteRef();
             
             // read own numbers
             while (line.Length > 0)
             {
-                line = line.ExtractInt(out int ownedNumbers);
+                line.ExtractIntRef(out int ownedNumbers);
                 own.Add(ownedNumbers);
                 
-                line = line.SkipSpaces();
+                line.SkipWhiteRef();
             }
 
             // determine winning numbers
@@ -47,21 +44,20 @@ public class Day4
     
     public static void Run()
     {
-        var lines = Util.ReadLines("4", test: false);
+        var lines = "4".ReadLinesEnumerable(test: false);
 
         Dictionary<int, Card> cards = new();
         
         int cardNumber = 0;
-        foreach (string constLine in lines)
+        foreach (string line in lines)
         {
             ++cardNumber;
-            Card card = new(cardNumber, constLine);
+            Card card = new(cardNumber, line.AsSpan());
             cards.Add(card.number, card);
         }
 
         // part one
         int resultPartOne = cards.Values.Sum(c => Util.GeometricSequence(c.winning.Count, 2));
-        Console.WriteLine();
         Console.WriteLine($"Part One : {resultPartOne}");
 
         // part two

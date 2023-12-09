@@ -1,11 +1,9 @@
-﻿using Aoc2023Cs;
+﻿using System.Reflection;
 
-// Day1.Run();
-//Day2one.Run();
-// Day2two.Run();
-// Day3.Run();
-//Day4.Run();
-// Day5inline.RunPartOne();
-Day5.RunPartTwo();
-//Day6one.Run();
-//Day6two.Run();
+int day = 7;
+int part = 1;
+
+Type dayClass = Type.GetType($"Aoc2023Cs.Day{day}")!;
+MethodInfo runMethod = dayClass.GetMethod("Run")!;
+object?[]? argument = ( runMethod.GetParameters().Length != 0 ) ? new [] { (object?)part } : null;
+runMethod.Invoke(null, argument );

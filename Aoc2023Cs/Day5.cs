@@ -2,79 +2,79 @@
 
 namespace Aoc2023Cs;
 
-public class Day5
+public class SeedRange(ulong start, ulong size, ulong id)
 {
-    public class SeedRange(ulong start, ulong size, ulong id)
+    public readonly ulong id = id;
+    public readonly ulong start = start;
+    public readonly ulong size = size;
+
+    public ulong min = ulong.MaxValue;
+    public ulong percent = 0;
+}
+
+public class RangeMaps(ulong[] seeds) : List<RangeMap>
+{
+    public ulong[] seeds = seeds;
+}
+
+public class RangeMap : List<RangeMap.Range>
+{
+    public readonly struct Range(ulong destination, ulong source, ulong size)
     {
-        public readonly ulong id = id;
-        public readonly ulong start = start;
+        public readonly ulong destination = destination;
+        public readonly ulong source = source;
         public readonly ulong size = size;
 
-        public ulong min = ulong.MaxValue;
-        public ulong percent = 0;
+        public bool In(ulong value) => (value >= source) && (value <= (source + size));
+        public ulong Map(ulong value) => value + destination - source;
     }
     
-    public class RangeMaps(ulong[] seeds) : List<RangeMap>
+    public ulong Map(ulong value)
     {
-        public ulong[] seeds = seeds;
-    }
-    
-    public class RangeMap : List<RangeMap.Range>
-    {
-        public readonly struct Range(ulong destination, ulong source, ulong size)
+        foreach (Range entry in this)
         {
-            public readonly ulong destination = destination;
-            public readonly ulong source = source;
-            public readonly ulong size = size;
-
-            public bool In(ulong value) => (value >= source) && (value <= (source + size));
-            public ulong Map(ulong value) => value + destination - source;
-        }
-        
-        public ulong Map(ulong value)
-        {
-            foreach (Range entry in this)
+            if (entry.In(value))
             {
-                if (entry.In(value))
-                {
-                    return entry.Map(value);
-                }
+                return entry.Map(value);
             }
-            return value;
         }
-        
-        public void Add(ulong destination, ulong source, ulong size)
-        {
-            Add(new Range(destination, source, size));
-        }
+        return value;
     }
+    
+    public void Add(ulong destination, ulong source, ulong size)
+    {
+        Add(new Range(destination, source, size));
+    }
+}
 
-    public static void RunPartOne()
+public class Day5
+{
+    public static void Run(int part)
+    {
+        if (part == 1) RunOne(); else RunTwo();
+    }
+    
+    public static void RunOne()
     {
         bool test = false;
-        RangeMaps data = test ? CreateTest() : CreateNonTest();
-        ulong min = Enumerable.Min(data.seeds, seed => data.Aggregate(seed, (running_, rangeMap) => rangeMap.Map(running_)));
+        RangeMaps data = test ? Input.CreateTest() : Input.Create();
+        ulong min = Enumerable.Min(data.seeds,
+            seed => data.Aggregate(seed, (running_, rangeMap) => rangeMap.Map(running_)));
         Console.WriteLine($"Part One: {min}");
     }
 
-    public static void RunPartTwo()
+    public static void RunTwo()
     {
         bool test = false;
-        RangeMaps data = test ? CreateTest() : CreateNonTest();
+        RangeMaps data = test ? Input.CreateTest() : Input.Create();
 
         List<SeedRange> seedRanges = new();
         for (ulong j = 0; j < (ulong)data.seeds.Length; j += 2)
         {
-            SeedRange seedRange = new(data.seeds[j], data.seeds[j + 1], (j/2)+1);
+            SeedRange seedRange = new(data.seeds[j], data.seeds[j + 1], (j / 2) + 1);
             seedRanges.Add(seedRange);
         }
 
-        var options = new ParallelOptions
-        {
-            MaxDegreeOfParallelism = 4
-        };
-
-        CancellationToken cancellationToken = new();
         Task task = Parallel.ForEachAsync(seedRanges, (seedRange, cancellationToken) =>
         {
             ulong j = 0;
@@ -91,14 +91,21 @@ public class Day5
                         }
                     }
                 }
+
                 if (seedRange.min > seed) seedRange.min = seed;
 
-                if ((++j % 10000000) == 0)
+                if ((++j % 1000000) == 0)
                 {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
                     seedRange.percent = (j * 100) / seedRange.size;
                 }
 
             }
+
             return new ValueTask();
         });
 
@@ -110,13 +117,16 @@ public class Day5
             {
                 progress.Append($"[{seedRange.id:00}]{seedRange.percent:000}% ");
             }
+
             Console.Write($"{progress}\r");
         }
-        
+
         Console.WriteLine($"Part Two: {seedRanges.Min(sr => sr.min)}");
     }
-    
-    public static RangeMaps CreateTest()
+}
+
+public static class Input {
+public static RangeMaps CreateTest()
     {
         RangeMaps result = new(new ulong[] { 79, 14, 55, 13 })
         {
@@ -163,7 +173,7 @@ public class Day5
         return result;
     }
 
-    public static RangeMaps CreateNonTest()
+    public static RangeMaps Create()
     {
         RangeMaps result = new(new ulong[] {
             304740406, 53203352, 1080760686, 52608146, 1670978447, 367043978, 1445830299, 58442414, 4012995194,

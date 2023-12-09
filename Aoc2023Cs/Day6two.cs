@@ -1,8 +1,10 @@
-﻿namespace Aoc2023Cs;
+﻿using System.Runtime.InteropServices;
 
-public class Day6two
+namespace Aoc2023Cs;
+
+public partial class Day6
 {
-    public struct Race
+    public struct Race2
     {
         public ulong duration;
         public ulong record;
@@ -22,12 +24,12 @@ public class Day6two
         }
     }
    
-    public static void Run()
+    public static void RunTwo()
     {
-        string[] lines = Util.ReadLines("6", test: false).ToArray();
-        string duration = String.Concat(lines[0].Where(char.IsDigit));
-        string record = String.Concat(lines[1].Where(char.IsDigit));
-        Race race = new() { duration = ulong.Parse(duration), record = ulong.Parse(record) }; 
+        var lines = "6".ReadLinesArray(test: false);
+        lines[0].AsSpan().ExtractInt(out ulong duration);
+        lines[1].AsSpan().ExtractInt(out ulong record);
+        Race2 race = new() { duration = duration, record = record }; 
         ulong score = race.WaysToWin();
       
         Console.WriteLine($"Part Two: {score}");

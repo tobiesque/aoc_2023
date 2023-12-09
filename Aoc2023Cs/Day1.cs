@@ -2,13 +2,21 @@
 
 namespace Aoc2023Cs;
 
-public static class Day1 {
-    public static void Run()
+public static class Day1
+{
+    public static void Run(int part)
     {
         bool partTwo = false;
         bool test = false;
-        string inputFile = partTwo ? "1two" : "1one";
-        inputFile += test ? ".tst" : ".txt";
+        string inputFile;
+        if (test)
+        {
+            inputFile = (partTwo ? "1two" : "1one") + ".tst";
+        }
+        else
+        {
+            inputFile = "1" + (test ? ".tst" : ".txt");
+        }
         var lines = File.ReadLines(inputFile);
         
         int result = 0;

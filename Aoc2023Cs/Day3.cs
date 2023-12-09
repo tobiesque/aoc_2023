@@ -1,9 +1,7 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 
 namespace Aoc2023Cs;
-
-using System.Diagnostics;
-using System.Collections.Generic;
 
 public class Part
 {
@@ -63,7 +61,7 @@ public class World
     public List<Part> parts = new();
     public HashSet<PartNumber> partNumbers = new();
 
-    public World(IEnumerable<string> lines)
+    public World(Span<string> lines)
     {
         StringBuilder number = new();
         int y = 0;
@@ -144,9 +142,7 @@ public static class Day3
 {
     public static void Run()
     {
-        var lines = Util.ReadLines("3", test : false);
-
-        World world = new(lines);
+        World world = new("3".ReadLinesArray(test: false));
         world.ConnectPartNumbers();
         Console.WriteLine(world.ToString());
 

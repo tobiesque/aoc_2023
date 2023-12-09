@@ -1,5 +1,6 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
+﻿using System.Globalization;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using Newtonsoft.Json;
 
 namespace Aoc2023Cs;
@@ -11,83 +12,110 @@ public static class Util
         return Enum.TryParse(typeof(TEnum), s, out var result) ? (TEnum)result : default!;
     }
 
-    public static string After(this string s, char c)
+    public static ref Span<char> After(this ref Span<char> s, char c)
     {
-        int pos = s.IndexOf(c);
-        return (pos != -1) ? s.Substring(pos + 1) : s;
+        s = s[(s.IndexOf(c) + 1)..];
+        return ref s;
     }
-    
-    public static string Until(this string s, params char[] chars)
+
+    public static ref Span<char> Until(this ref Span<char> s, params char[] cs)
     {
-        List<int> positions = new();
-        foreach (char c in chars)
+        int newPos = int.MaxValue;
+        foreach (char c in cs)
         {
-            int pos = s.IndexOf(c);
-            if (pos != -1)
-            {
-                positions.Add(pos);
-            }
+            newPos = Math.Min(newPos, s.IndexOf(c));
         }
-
-        if (positions.Count == 0) return s;
-        return s.Substring(0, positions.Min());
+        s = s[..(newPos + 1)];
+        return ref s;
     }
 
-    public static string ExtractInt(this string s, out int result)
-    {
-        Match match = Regex.Match(s, @"\b\d*\b", RegexOptions.CultureInvariant);
-        if (!match.Success || (match.Length == 0))
-        {
-            result = int.MinValue;
-            return s;
-        }
-        
-        result = int.Parse(s.Substring(0, match.Length));
-        if (match.Length >= s.Length) return "";
-        return s.Substring(match.Length).SkipSpaces();
-    }
+    public static ref Span<char> ExtractWhiteInt(this ref Span<char> s, out int result) => ref s.SkipWhiteRef().ExtractIntRef(out result).SkipWhiteRef();
 
-    public static string ExtractSpacedInt(this string s, out int result) => s.SkipSpaces().ExtractInt(out result).SkipSpaces();
-
-    public static IEnumerable<string> SkipEmptyLines(this IEnumerable<string> l)
+    public static ref Span<string> SkipEmptyLines(this ref Span<string> l)
     {
-        return l.SkipWhile(string.IsNullOrWhiteSpace);
+        int i = 0;
+        while ((l.Length > 0) && (string.IsNullOrWhiteSpace(l[0]))) ++i;
+        l = l[i..];
+        return ref l;
     }  
     
-    public static string SkipSpaces(this string s)
+    public static ref Span<char> SkipRef(this ref Span<char> s, int count)
     {
-        int spaces = 0;
-        while ((s.Length > spaces) && (s[spaces] == ' '))
-        {
-            ++spaces;
-        }
-        return s.Substring(spaces);
+        s = s[count..];
+        return ref s;
     }
 
-    public static string ExtractString(this string s, out string r)
-    {
-        StringBuilder result = new();
-        while ((s.Length > 0) && !char.IsWhiteSpace(s.First()))
-        {
-            result.Append(s.First());
-            s = s.Substring(1);
-        }
+    public static Span<char> Skip(this Span<char> s, int count) => s[count..];
 
-        r = result.ToString();
-        return s;
-    }
+    public static ref Span<char> SkipWhiteRef(this ref Span<char> s) => ref s.ExtractRef(out var _, char.IsWhiteSpace);
+    public static Span<char> SkipWhite(this Span<char> s) => s.Extract(out var _, char.IsWhiteSpace);
 
-    public static bool Between(int value, int min, int size)
+    public static ref Span<char> ExtractRef(this ref Span<char> s, out Span<char> result, Func<char, bool> predicate)
     {
-        return (value >= min) && (value >= (min+size));
+        int i = 0;
+        while ((s.Length > i) && predicate(s[i])) ++i;
+        result = s[..i];
+        return ref s.SkipRef(i);
     }
     
+    public static Span<char> Extract(this Span<char> s, out Span<char> result, Func<char, bool> predicate)
+    {
+        int i = 0;
+        while ((s.Length > i) && predicate(s[i])) ++i;
+        result = s[..i];
+        return s.Skip(i);
+    }
+    
+    public static ref Span<char> ExtractStringRef(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, char.IsWhiteSpace);
+    public static Span<char> ExtractString(this Span<char> s, out Span<char> result) => Extract(s, out result, char.IsWhiteSpace);
+
+    public static bool IsIntDigit(this char c) => char.IsDigit(c) || (c == '-');
+    
+    public static ref Span<char> ExtractIntRef<T>(this ref Span<char> s, out T result) where T : IBinaryInteger<T>
+    {
+        ExtractRef(ref s, out Span<char> strResult, IsIntDigit);
+        result = strResult.ReadIntWhole<T>();
+        return ref s;
+    }
+
+    public static Span<char> ExtractInt<T>(this Span<char> s, out T result) where T : IBinaryInteger<T>
+    {
+        Extract(s, out Span<char> strResult, IsIntDigit);
+        result = strResult.ReadIntWhole<T>();
+        return s;
+    }
+    
+    public static T ReadInt<T>(this Span<char> s) where T : IBinaryInteger<T>
+    {
+        Extract(s, out Span<char> strResult, IsIntDigit);
+        return strResult.ReadIntWhole<T>();
+    }
+    
+    public static T ReadIntWhole<T>(this Span<char> s) where T : IBinaryInteger<T>
+    {
+        return T.Parse(s, CultureInfo.InvariantCulture);
+    }
+    
+    public static bool Between(int value, int min, int size) => (value >= min) && (value >= (min+size));
+
     public static string MakeList<T>(this IEnumerable<T> source) where T : IFormattable
     {
         return string.Join(", ", source.Select(c => c.ToString()));
     }
 
-    public static IEnumerable<string> ReadLines(this string day, bool test = false)
+    public static Dictionary<U, T> Inverse<T, U>(this Dictionary<T, U> dict) where T : notnull where U : notnull
+    {
+        return dict.ToDictionary((t) => t.Value, (u) => u.Key);
+    }
+
+    public static IEnumerable<T> AsEnumerable<T>(this Span<T> span) => span.ToArray();
+    public static Span<char> AsSpan(this string s) => CollectionsMarshal.AsSpan(s.ToList());
+    
+    public static List<string> ReadLinesList(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToList();
+    public static string[] ReadLinesArray(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToArray();
+    public static Span<string> ReadLinesSpan(this string day, bool test = false) => ReadLinesArray(day, test);
+
+    public static IEnumerable<string> ReadLinesEnumerable(this string day, bool test = false)
     {
         string inputFile = $"{day}{(test ? ".tst" : ".txt")}";
         return File.ReadLines(inputFile);

@@ -44,7 +44,7 @@ public class Day4
     
     public static void Run()
     {
-        var lines = "4".ReadLinesEnumerable(test: false);
+        var lines = "4".ReadLinesEnumerable(test: true);
 
         Dictionary<int, Card> cards = new();
         
@@ -57,7 +57,7 @@ public class Day4
         }
 
         // part one
-        int resultPartOne = cards.Values.Sum(c => Util.GeometricSequence(c.winning.Count, 2));
+        int resultPartOne = cards.Values.Sum(c => 2.GeometricSequence(c.winning.Count));
         Console.WriteLine($"Part One : {resultPartOne}");
 
         // part two

@@ -66,9 +66,10 @@ public static class Util
         return s.Skip(i);
     }
     
-    public static ref Span<char> ExtractStringRef(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, char.IsWhiteSpace);
-    public static Span<char> ExtractString(this Span<char> s, out Span<char> result) => Extract(s, out result, char.IsWhiteSpace);
+    public static ref Span<char> ExtractStringRef(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, IsNotWhitespace);
+    public static Span<char> ExtractString(this Span<char> s, out Span<char> result) => Extract(s, out result, IsNotWhitespace);
 
+    public static bool IsNotWhitespace(this char c) => !char.IsWhiteSpace(c);
     public static bool IsIntDigit(this char c) => char.IsDigit(c) || (c == '-');
     
     public static ref Span<char> ExtractIntRef<T>(this ref Span<char> s, out T result) where T : IBinaryInteger<T>
@@ -95,8 +96,10 @@ public static class Util
     {
         return T.Parse(s, CultureInfo.InvariantCulture);
     }
+
+    public static T[] Replicate<T>(this T value, int num) => Enumerable.Repeat(value, num).ToArray();
     
-    public static bool Between(int value, int min, int size) => (value >= min) && (value >= (min+size));
+    public static bool Between<T>(this T value, T min, T size) where T : INumber<T> => (value >= min) && (value >= (min+size));
 
     public static string MakeList<T>(this IEnumerable<T> source) where T : IFormattable
     {
@@ -121,23 +124,6 @@ public static class Util
         return File.ReadLines(inputFile);
     }
 
-    public static int GeometricSequence(int n, int factor)
-    {
-        if (n == 0) return 0;
-        
-        int value = 1;
-        for (int i = 1; i < n; ++i)
-        {
-            value *= factor;
-        }
-        return value;
-    }
-    
-    public static string ToStrung<T>(this T o)
-    {
-        return JsonConvert.SerializeObject(o, Formatting.Indented);
-    }
-    
     public class MultiMap<TKey, TValue> : Dictionary<TKey, HashSet<TValue>> where TValue : class where TKey : notnull
     {
         public TValue MultiAdd(TKey key, TValue value)
@@ -167,55 +153,4 @@ public static class Util
             }
         }
     }
-}
-
-public struct Vec2 : IEqualityComparer<Vec2>
-{
-    public Vec2(int x, int y)
-    {
-        this.x = x;
-        this.y = y;
-    }
-    
-    public int x { get; set; }
-    public int y { get; set; }
-
-    public static Vec2 operator +(Vec2 a) => new(a.x, a.y);
-    public static Vec2 operator -(Vec2 a) => new(-a.x, -a.y);
-    public static Vec2 operator +(Vec2 a, Vec2 b) => new(a.x + b.x, a.y + b.y);
-    public static Vec2 operator -(Vec2 a, Vec2 b) => new(a.x - b.x, a.y - b.y);
-
-    public override int GetHashCode() => HashCode.Combine(x, y);
-    public int GetHashCode(Vec2 other) => HashCode.Combine(other.x, other.y);
-    
-    public bool Equals(Vec2 a, Vec2 b) => (a.x == b.x) && (a.y == b.y);
-    public bool Equals(Vec2 b) => (x == b.x) && (y == b.y);
-    public override bool Equals(object? b) => (b is Vec2 other) && Equals(other);
-
-    public override string ToString() => $"({x}, {y})";
-}
-
-public struct Line2 : IEqualityComparer<Line2>
-{
-    public Vec2 from { get; set; }
-    public Vec2 to { get; set; }
-
-    public Line2(Vec2 from, Vec2 to)
-    {
-        this.from = from;
-        this.to = to;
-    }
-
-    public bool IsVertical() => from.x == to.x;
-    public bool IsHorizontal() => from.y == to.y;
-    public bool IsAxisParallel() => IsVertical() || IsHorizontal();
-    
-    public int GetHashCode(Line2 obj) => HashCode.Combine(obj.from, obj.to);
-    public override int GetHashCode() => HashCode.Combine(from, to);
-
-    public bool Equals(Line2 a, Line2 v) => a.from.Equals(a.from, v.from) && a.to.Equals(a.to, v.to);
-    public bool Equals(Line2 b) => Equals(this, b);
-    public override bool Equals(object? b) => (b is Line2 other) && Equals(other);
-    
-    public override string ToString() => IsAxisParallel() ? $"({from.x}-{to.x}, {from.y})" : $"{from}->{to}";
 }

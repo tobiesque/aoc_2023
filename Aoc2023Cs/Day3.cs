@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text;
+using Aoc2023Cs.Util2d;
 
 namespace Aoc2023Cs;
 

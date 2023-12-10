@@ -55,18 +55,20 @@ public static class Util
     {
         int i = 0;
         while ((s.Length > i) && !predicate(s[i])) ++i;
-        while ((s.Length > i) && predicate(s[i])) ++i;
-        result = s[..i];
-        return ref s.SkipRef(i);
+        int j = i;
+        while ((s.Length > j) && predicate(s[j])) ++j;
+        result = s[i..j];
+        return ref s.SkipRef(j);
     }
     
     public static Span<char> Extract(this Span<char> s, out Span<char> result, Func<char, bool> predicate)
     {
         int i = 0;
         while ((s.Length > i) && !predicate(s[i])) ++i;
-        while ((s.Length > i) && predicate(s[i])) ++i;
-        result = s[..i];
-        return s.Skip(i);
+        int j = i;
+        while ((s.Length > j) && predicate(s[j])) ++j;
+        result = s[i..j];
+        return s.Skip(j);
     }
     
     public static ref Span<char> ExtractStringRef(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, IsNotWhitespace);
@@ -102,7 +104,6 @@ public static class Util
 
     public static ref Span<char> ExtractLetters(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, char.IsAsciiLetter);
 
-    public static int IndexOfX(this string s, char c) => Enumerable.Repeat(0, s.Length).First(i => s[i] == c);
     public static string Replicate(this char value, int num) => new (Enumerable.Repeat(value, num).ToArray());
 
     public static string Append(this string s, char c) => s + c;

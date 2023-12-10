@@ -47,12 +47,14 @@ public static class Util
 
     public static Span<char> Skip(this Span<char> s, int count) => s[count..];
 
+    public static ref Span<char> SkipNonInt(this ref Span<char> s) => ref s.ExtractRef(out var _, c => !IsIntDigit(c));
     public static ref Span<char> SkipWhiteRef(this ref Span<char> s) => ref s.ExtractRef(out var _, char.IsWhiteSpace);
     public static Span<char> SkipWhite(this Span<char> s) => s.Extract(out var _, char.IsWhiteSpace);
 
     public static ref Span<char> ExtractRef(this ref Span<char> s, out Span<char> result, Func<char, bool> predicate)
     {
         int i = 0;
+        while ((s.Length > i) && !predicate(s[i])) ++i;
         while ((s.Length > i) && predicate(s[i])) ++i;
         result = s[..i];
         return ref s.SkipRef(i);
@@ -61,6 +63,7 @@ public static class Util
     public static Span<char> Extract(this Span<char> s, out Span<char> result, Func<char, bool> predicate)
     {
         int i = 0;
+        while ((s.Length > i) && !predicate(s[i])) ++i;
         while ((s.Length > i) && predicate(s[i])) ++i;
         result = s[..i];
         return s.Skip(i);
@@ -97,8 +100,13 @@ public static class Util
         return T.Parse(s, CultureInfo.InvariantCulture);
     }
 
-    public static T[] Replicate<T>(this T value, int num) => Enumerable.Repeat(value, num).ToArray();
-    
+    public static ref Span<char> ExtractLetters(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, char.IsAsciiLetter);
+
+    public static int IndexOfX(this string s, char c) => Enumerable.Repeat(0, s.Length).First(i => s[i] == c);
+    public static string Replicate(this char value, int num) => new (Enumerable.Repeat(value, num).ToArray());
+
+    public static string Append(this string s, char c) => s + c;
+
     public static bool Between<T>(this T value, T min, T size) where T : INumber<T> => (value >= min) && (value >= (min+size));
 
     public static string MakeList<T>(this IEnumerable<T> source) where T : IFormattable
@@ -113,6 +121,18 @@ public static class Util
 
     public static IEnumerable<T> AsEnumerable<T>(this Span<T> span) => span.ToArray();
     public static Span<char> AsSpan(this string s) => CollectionsMarshal.AsSpan(s.ToList());
+
+    public static List<T> SortSelf<T>(this List<T> list, Comparison<T> comparison)
+    {
+        list.Sort(comparison);
+        return list;
+    }
+    
+    public static List<T> SortSelf<T>(this List<T> list)
+    {
+        list.Sort();
+        return list;
+    }
     
     public static List<string> ReadLinesList(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToList();
     public static string[] ReadLinesArray(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToArray();

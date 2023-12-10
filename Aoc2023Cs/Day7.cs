@@ -30,13 +30,13 @@ public static class Day7
         for (int i = 0; i < hands.Count; i++)
         {
             ulong handScore = hands[i].bid * (ulong)(i + 1);
-            Console.WriteLine($"{hands[i].hand} - {hands[i].GetStrength()} - {i+1} * {hands[i].bid} = {handScore}");
+            Console.WriteLine($"{new String(hands[i].hand)} - {hands[i].GetStrength()} - {i+1} * {hands[i].bid} = {handScore}");
             score += handScore;
         }
-        Console.WriteLine($"Part One: {score}");
+        Console.WriteLine($"Part {part}: {score}");
     }
 
-    public enum Strength { HighCard, OnePair, TwoPair, Three, FullHouse, Four, Five };
+    public enum Strength { Unknown, HighCard, OnePair, TwoPair, Three, FullHouse, Four, Five };
 
     public static CardValue ToValue(Card card) => cardToValueMap[card];
 
@@ -54,16 +54,20 @@ public static class Day7
         cardToValueMap = cards.ToDictionary(c => c, c => Array.IndexOf(cards.Reverse().ToArray(), c));
     }
 
-    public class Hand(Span<Card> hand, ulong bid) : IComparable<Hand>
+    public class Hand(Span<Card> handSpan, ulong bid = 0) : IComparable<Hand>
     {
-        public string hand = hand.ToString();
+        public Card[] hand = handSpan.ToArray();
         public ulong bid = bid;
+        public Strength strength = Strength.Unknown;
 
-        public Strength GetStrength()
+        public static Strength GetStrength(Card[] hand)
         {
             Strength tempStrength = Strength.HighCard;
             foreach (Card card in GetCards())
             {
+                // skip jokers in part two
+                if (!partOne && card.IsJoker()) continue;
+                
                 int count = hand.Count(c => (c == card));
                 switch (count)
                 {
@@ -80,6 +84,15 @@ public static class Day7
             return tempStrength;
         }
 
+        public Strength GetStrength()
+        {
+            if (strength == Strength.Unknown)
+            {
+                strength = partOne ? GetStrength(hand) : StrongestJokerHand();
+            }
+            return strength;
+        }
+
         public bool IsStrongerSecondary(Hand other)
         {
             for (var i = 0; i < hand.Length; i++)
@@ -93,53 +106,69 @@ public static class Day7
             return false;
         }
 
-        public int DecodePermutation(int value, int digit)
+        public Strength StrongestJokerHand()
         {
-            return value / 12.Pow(digit);
-        } 
+            Strength strength = GetStrength(hand);
+            
+            Card[] sortedHand = hand.ToList().SortSelf().ToArray();
+            int jokerCount = sortedHand.Count(IsJoker);
+            
+            // no jokers, it's just the hand
+            if (jokerCount == 0) return strength;
+            
+            // five jokers, go for the best five
+            if (jokerCount == 5) return Strength.Five;
 
-        public string StrongestJokerHand()
-        {
-            int jokerCount = hand.Count(IsJoker);
-            if (jokerCount == 0) return hand;
+            // four jokers, make a five
+            if (jokerCount == 4) return Strength.Five;
 
-            for (var i = 0; i < hand.Length; i++)
+            if (jokerCount == 3)
             {
-                if (!IsJoker(hand[i])) continue;
-
-                
-                foreach (Card card in cards)
+                return strength == Strength.OnePair ? 
+                    Strength.Five : // three jokers and a pair, make a five
+                    Strength.FullHouse; // three jokers and two different cards, make a full house
+            }
+            
+            if (jokerCount == 2)
+            {
+                return strength switch
                 {
-                    if (IsJoker(card)) continue;
+                    Strength.Three => Strength.Five, // two jokers and three, make five
+                    Strength.OnePair => Strength.Four, // two jokers and a pair, make four
+                    _ => Strength.Three
+                };
 
-                    
-                }
+                // two jokers and three different cards, make a three
             }
-
-            if (jokerCount == 5) return "AAAAA";
-
-            if (jokerCount == 4)
+            
+            if (jokerCount == 1)
             {
-                
+                int jokerPosition = Array.IndexOf(sortedHand, 'J');
+                Card[] currentHand = sortedHand;
+
+                Strength bestStrength = Strength.Unknown;
+                foreach (Card c in cards.Where(c => !IsJoker(c)))
+                {
+                    currentHand[jokerPosition] = c;
+                    Strength currentStrength = GetStrength(currentHand);
+                    if (currentStrength > bestStrength)
+                    {
+                        bestStrength = currentStrength;
+                    }
+                }
+                return bestStrength;
             }
 
-            return "";
+            return strength;
         }
 
         public int CompareTo(Hand? other)
         {
-            if (partOne)
-            {
-                Strength thisStrength = GetStrength();
-                Strength otherStrength = other!.GetStrength();
-                int result = ((int)thisStrength).CompareTo((int)otherStrength);
-                if (result != 0) return result;
-                return IsStrongerSecondary(other!) ? 1 : -1;
-            }
-            
-            
-            // Part Two
-            return 0;
+            Strength thisStrength = GetStrength();
+            Strength otherStrength = other!.GetStrength();
+            int result = ((int)thisStrength).CompareTo((int)otherStrength);
+            if (result != 0) return result;
+            return IsStrongerSecondary(other!) ? 1 : -1;
         }
     }
 }

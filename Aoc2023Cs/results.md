@@ -28,8 +28,13 @@
 
 # Day 8
 ## Part One: ?
-## Part Two: ?
+## Part Two: 22289513667691
 
 # Day 9
 ## Part One: ?
+## Part Two: 1211
+
+# Day 10
+## Part One: 7102
 ## Part Two: ?
+

@@ -8,13 +8,17 @@ public struct Vec2 : IEqualityComparer<Vec2>
         this.y = y;
     }
 
-    public int x { get; set; }
-    public int y { get; set; }
+    public int x = -1;
+    public int y = -1;
+
+    public static Vec2 invalid = new Vec2(-1, -1);
 
     public static Vec2 operator +(Vec2 a) => new(a.x, a.y);
     public static Vec2 operator -(Vec2 a) => new(-a.x, -a.y);
     public static Vec2 operator +(Vec2 a, Vec2 b) => new(a.x + b.x, a.y + b.y);
     public static Vec2 operator -(Vec2 a, Vec2 b) => new(a.x - b.x, a.y - b.y);
+    public static bool operator ==(Vec2 a, Vec2 b) => (a.x == b.x) && (a.y == b.y);
+    public static bool operator !=(Vec2 a, Vec2 b) => (a.x != b.x) || (a.y != b.y);
 
     public override int GetHashCode() => HashCode.Combine(x, y);
     public int GetHashCode(Vec2 other) => HashCode.Combine(other.x, other.y);

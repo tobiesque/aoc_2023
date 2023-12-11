@@ -102,7 +102,8 @@ public static class Util
         return T.Parse(s, CultureInfo.InvariantCulture);
     }
 
-    public static ref Span<char> ExtractLetters(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, char.IsAsciiLetter);
+    public static Span<char> ExtractLetters(this Span<char> s, out Span<char> result) => Extract(s, out result, char.IsAsciiLetterOrDigit);
+    public static ref Span<char> ExtractLettersRef(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, char.IsAsciiLetterOrDigit);
 
     public static string Replicate(this char value, int num) => new (Enumerable.Repeat(value, num).ToArray());
 
@@ -110,11 +111,16 @@ public static class Util
 
     public static bool Between<T>(this T value, T min, T size) where T : INumber<T> => (value >= min) && (value >= (min+size));
 
-    public static string MakeList<T>(this IEnumerable<T> source) where T : IFormattable
+    public static string MakeList<T>(this IEnumerable<T> source)
     {
-        return string.Join(", ", source.Select(c => c.ToString()));
+        return string.Join(", ", source.Select(e => e!.ToString()));
     }
 
+    public static string MakeList<T>(this Span<T> source)
+    {
+        return string.Join(", ", source.ToArray().Select(e => e.ToString()));
+    }
+    
     public static Dictionary<U, T> Inverse<T, U>(this Dictionary<T, U> dict) where T : notnull where U : notnull
     {
         return dict.ToDictionary((t) => t.Value, (u) => u.Key);

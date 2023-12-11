@@ -1,5 +1,5 @@
-﻿int day = 7;
-int part = 1;
+﻿int day = 8;
+int part = 2;
 
 
 

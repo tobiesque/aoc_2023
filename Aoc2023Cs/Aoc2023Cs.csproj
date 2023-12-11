@@ -65,6 +65,22 @@
       <Content Include="..\7.txt">
         <Link>7.txt</Link>
       </Content>
+      <Content Include="..\8.tst">
+        <Link>8.tst</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\8.txt">
+        <Link>8.txt</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\8_1.tst">
+        <Link>8_1.tst</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\8_2.tst">
+        <Link>8_2.tst</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
     <ItemGroup>

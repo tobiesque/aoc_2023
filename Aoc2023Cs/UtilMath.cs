@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
+using System.Linq;
+    
 using Aoc2023Cs;
 
 namespace Aoc2023Cs;
@@ -48,12 +50,66 @@ public static class UtilMath
             a = b % a;
             b = a_;
         }
+
         return b;
     }
 
-    public static T GreatestCommonDivisor<T>(this IEnumerable<T> e) where T : INumber<T> => e.Aggregate(GreatestCommonDivisor);
+    public static T GreatestCommonDivisor<T>(this IEnumerable<T> e) where T : INumber<T> =>
+        e.Aggregate(GreatestCommonDivisor);
+
     public static T LeastCommonDenominator<T>(T a, T b) where T : INumber<T> => (a / GreatestCommonDivisor(a, b)) * b;
-    public static T LeastCommonDenominator<T>(this IEnumerable<T> e) where T : INumber<T>  => e.Aggregate(LeastCommonDenominator);
+
+    public static T LeastCommonDenominator<T>(this IEnumerable<T> e) where T : INumber<T> =>
+        e.Aggregate(LeastCommonDenominator);
+
+    public static void AddPrimeFactors(this ISet<ulong> primes, ulong number)
+    {
+        Console.Write($"    ");
+        if ((number % 2) == 0)
+        {
+            primes.Add(2);
+            Console.Write("2 ");
+            while ((number % 2) == 0) number /= 2;
+        }
+
+        ulong limit = (ulong)Math.Sqrt(number);
+        ulong div = 3UL;
+        while (div <= limit)
+        {
+            if ((number % div) == 0)
+            {
+                primes.Add(div);
+                while ((number % div) == 0) number /= div;
+                limit = (ulong)Math.Sqrt(number);
+            }
+            div += 2UL;
+        }
+        if (number > 2)
+        {
+            primes.Add(number);
+        }
+    }
+
+    public static IEnumerator<ulong> PrimeFactors(IEnumerable<ulong> e)
+    {
+        HashSet<ulong> primes = new();
+        foreach (ulong number_ in e)
+        {
+            ulong number = number_;
+            for (ulong div = 2; div <= (ulong)Math.Sqrt(number); div++)
+            {
+                while (number % div == 0)
+                {
+                    if (primes.Add(div)) yield return div;
+                    number /= div;
+                }
+            }
+            if (number > 2)
+            {
+                if (primes.Add(number)) yield return number;
+            }
+        }
+    }
 }
 
 public interface INumberBase

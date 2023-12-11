@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Linq;
 using Newtonsoft.Json;
 
 namespace Aoc2023Cs;
@@ -111,9 +112,9 @@ public static class Util
 
     public static bool Between<T>(this T value, T min, T size) where T : INumber<T> => (value >= min) && (value >= (min+size));
 
-    public static string MakeList<T>(this IEnumerable<T> source)
+    public static string MakeList<T>(this IEnumerable<T> source, string separator = ", ")
     {
-        return string.Join(", ", source.Select(e => e!.ToString()));
+        return string.Join(separator, source.Select(e => e!.ToString()));
     }
 
     public static string MakeList<T>(this Span<T> source)

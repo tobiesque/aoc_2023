@@ -74,6 +74,8 @@ public class Day8
         else
         {
             ulong steps = 0;
+            HashSet<ulong> primes = new();
+            
             Node[] currents = nodes.Values.Where(Node.IsStartNode).ToArray();
             List<ulong> stepses = new();
             foreach (Node start in currents)
@@ -91,10 +93,12 @@ public class Day8
                     if (Node.IsEndNode(current)) break;
                 }
                 stepses.Add(steps);
-                Console.WriteLine($"{steps} ({start.name}->{current.name})");
+                primes.AddPrimeFactors(steps);
             }
+            Console.WriteLine($"-> {stepses.MakeList()}");
+            Console.WriteLine($"-> {primes.MakeList()}");
 
-            Console.WriteLine($"Part Two: {stepses.Product()}");
+            Console.WriteLine($"Part Two: {primes.Product()}");
         }
     }
 }

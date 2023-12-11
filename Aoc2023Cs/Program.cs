@@ -1,5 +1,5 @@
 ﻿int day = 10;
-int part = 1;
+int part = 2;
 
 
 

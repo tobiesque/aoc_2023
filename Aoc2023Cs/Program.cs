@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-int day = 11;
+int day = 12;
 int part = 2;
 
 

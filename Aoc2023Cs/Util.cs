@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 
 namespace Aoc2023Cs;
@@ -85,7 +85,7 @@ public static class Util
 
     public static Span<char> ExtractInt<T>(this Span<char> s, out T result) where T : IBinaryInteger<T>
     {
-        Extract(s, out Span<char> strResult, IsIntDigit);
+        s = Extract(s, out Span<char> strResult, IsIntDigit);
         result = strResult.ReadIntWhole<T>();
         return s;
     }
@@ -106,6 +106,37 @@ public static class Util
 
     public static string Replicate(this char value, int num) => new (Enumerable.Repeat(value, num).ToArray());
 
+    public static string Repeat(this string value, int num)
+    {
+        StringBuilder sb = new();
+        for (int i = 0; i < num; ++i)
+        {
+            sb.Append(value);
+        }
+        return sb.ToString();
+    }
+
+    public static string Repeat(this Span<char> value, int num)
+    {
+        StringBuilder sb = new();
+        for (int i = 0; i < num; ++i)
+        {
+            sb.Append(value);
+        }
+        return sb.ToString();
+    }
+    
+    public static IEnumerable<T> Repeat<T>(this IEnumerable<T> e, int num)
+    {
+        for (int i = 0; i < num; ++i)
+        {
+            foreach (var v in e)
+            {
+                yield return v;
+            }
+        }
+    }
+    
     public static string Append(this string s, char c) => s + c;
 
     public static bool Between<T>(this T value, T min, T size) where T : INumber<T> => (value >= min) && (value >= (min+size));

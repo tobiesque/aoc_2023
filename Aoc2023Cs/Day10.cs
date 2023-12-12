@@ -1,8 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
-using System.Dynamic;
+﻿using System.Diagnostics;
 using Aoc2023Cs.Util2d;
-using Microsoft.VisualBasic.FileIO;
 
 namespace Aoc2023Cs;
 
@@ -11,73 +8,43 @@ public class Day10
 {
     public static bool partOne = true;
 
-    public struct Pipe
+    public class Pipe
     {
-        public enum Connection
-        {
-            North,
-            South,
-            East,
-            West,
-            None
-        };
+        public enum Connection { North, South, East, West, None };
 
         public static Connection Invert(Connection connection)
         {
-            switch (connection)
+            return connection switch
             {
-                case Connection.North: return Connection.South;
-                case Connection.South: return Connection.North;
-                case Connection.West: return Connection.East;
-                case Connection.East: return Connection.West;
-            }
-
-            return Connection.None;
+                Connection.North => Connection.South,
+                Connection.South => Connection.North,
+                Connection.West => Connection.East,
+                Connection.East => Connection.West,
+                _ => Connection.None
+            };
         }
 
-        public Vec2 position;
-        public char type;
+        public static bool IsVertical(Connection connection) => connection is Connection.North or Connection.South;
+
+        
+        public Vec2 pos = Vec2.invalid;
         public Connection one = Connection.North;
         public Connection two = Connection.North;
-        public int distance = 0;
+        public bool isOnPath = false;
 
         public static Pipe invalid = new(Vec2.invalid, ' ');
 
-        public Connection GetConnection(int i) => (i == 0) ? two : one;
-
-        public Pipe() : this(Vec2.invalid, '.')
+        public Pipe(Vec2 pos, char type)
         {
-        }
+            this.pos = pos;
 
-        public Pipe(Vec2 position, char type)
-        {
-            this.position = position;
-            this.type = type;
-
-            switch (type)
-            {
-                case '|':
-                    Connect(Connection.North, Connection.South);
-                    break;
-                case '-':
-                    Connect(Connection.East, Connection.West);
-                    break;
-                case 'L':
-                    Connect(Connection.North, Connection.East);
-                    break;
-                case 'J':
-                    Connect(Connection.North, Connection.West);
-                    break;
-                case '7':
-                    Connect(Connection.West, Connection.South);
-                    break;
-                case 'F':
-                    Connect(Connection.East, Connection.South);
-                    break;
-                case '.':
-                    Connect(Connection.None, Connection.None);
-                    break;
-            }
+            if (type == '|') Connect(Connection.North, Connection.South);
+            else if (type == '-') Connect(Connection.East, Connection.West);
+            else if (type == 'L') Connect(Connection.North, Connection.East);
+            else if (type == 'J') Connect(Connection.North, Connection.West);
+            else if (type == '7') Connect(Connection.West, Connection.South);
+            else if (type == 'F') Connect(Connection.East, Connection.South);
+            else if (type == '.') Connect(Connection.None, Connection.None);
         }
 
         public static Connection CategorizeIncoming(Vec2 incoming)
@@ -117,18 +84,9 @@ public class Day10
             this.two = oneIsGreaterThanTwo ? two : one;
         }
 
-        public Connection Enter(Vec2 from) => CategorizeIncoming(from - position);
+        public Connection Enter(Connection from) => (one == from) ? two : one;
 
-        public Connection Enter(Connection from)
-        {
-            Debug.Assert((one == from) || (two == from));
-            return (one == from) ? two : one;
-        }
-
-        public override string ToString()
-        {
-            return $"({position.x}, {position.y}) - exits through {one} and {two}";
-        }
+        public override string ToString() => $"({pos.x}, {pos.y}) - exits through {one} and {two}";
     }
 
     public class Map
@@ -177,6 +135,21 @@ public class Day10
             (x < 0) || (y < 0) || (x >= map.GetLength(0)) || (y >= map.GetLength(1))
                 ? Pipe.invalid
                 : map[x, y];
+
+        public void Walk(Pipe.Connection enter, Func<Pipe, Vec2, bool> callback)
+        {
+            Vec2 pos = start;
+            int steps = 0;
+            while (true)
+            {
+                ++steps;
+                Pipe pipe = this[pos];
+                Pipe.Connection exit = pipe.Enter(enter);
+                enter = Pipe.Invert(exit);
+                pos += Pipe.ToVec2(exit);
+                if (callback(pipe, pos)) break;
+            }
+        }
     }
 
     public static void Run(int part)
@@ -185,34 +158,74 @@ public class Day10
         string[] mapLines = "10".ReadLinesArray(test: false);
 
         Map map = new(mapLines);
-
         if (partOne) PartOne(map); else PartTwo(map);
     }
     
     public static void PartTwo(Map map)
     {
-        Pipe.Connection enter = map[map.start].one;
-        Vec2 pos = map.start;
-
-        while (true)
+        // mark path
+        map.Walk(map[map.start].one, (pipe, newPos) =>
         {
-            Pipe pipe = map[pos];
-            Console.WriteLine(pipe);
+            pipe.isOnPath = true;
+            return (newPos == map.start);
+        });
 
-            Pipe.Connection exit = pipe.Enter(enter);
-            Console.WriteLine($"Enter from {enter}, leave through {exit}");
-            Vec2 move = Pipe.ToVec2(exit);
-            enter = Pipe.Invert(exit);
-            pos += move;
-
-            if (pos == map.start)
+        // scan lines and count going in and out of the path
+        int insideCount = 0;
+        for (int y = 0; y < map.map.GetLength(1); ++y)
+        {
+            bool isInside = false;
+            bool isOnHorizontalPath = false;
+            Pipe.Connection horizontalBegin = Pipe.Connection.None; 
+            for (int x = 0; x < map.map.GetLength(0); ++x)
             {
-                Console.WriteLine("STOPPED");
-                break;
+                Vec2 pos = new(x, y);
+                Pipe pipe = map[pos];
+                if (pipe.isOnPath)
+                {
+                    Console.Write('+');
+                    
+                    // is straight?
+                    if (pipe.one == Pipe.Invert(pipe.two))
+                    {
+                        // straight vertical is crossing path boundaries
+                        if (Pipe.IsVertical(pipe.one))
+                        {
+                            isInside = !isInside;
+                        }
+                        // straight horizontal is ignored
+                    }
+                    else
+                    {
+                        isOnHorizontalPath = !isOnHorizontalPath;
+                        if (isOnHorizontalPath)
+                        {
+                            horizontalBegin = Pipe.IsVertical(pipe.one) ? pipe.one : pipe.two;
+                        }
+                        else
+                        {
+                            Pipe.Connection horizontalEnd = Pipe.IsVertical(pipe.one) ? pipe.one : pipe.two;
+                            if (horizontalBegin != horizontalEnd) isInside = !isInside;
+                        }
+                    }
+                }
+                else
+                {
+                    if (isInside && !isOnHorizontalPath)
+                    {
+                        Console.Write('I');
+                        ++insideCount;
+                    }
+                    else
+                    {
+                        Console.Write('O');
+                    }
+                }
             }
+            Console.WriteLine();
         }
         
-        Console.WriteLine($"Part Two: ");
+        Console.WriteLine($"Part Two: {insideCount}");
     }
 
     public static void PartOne(Map map)

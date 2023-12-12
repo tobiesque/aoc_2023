@@ -30,8 +30,6 @@ public static class Util
         return ref s;
     }
 
-    public static ref Span<char> ExtractWhiteInt(this ref Span<char> s, out int result) => ref s.SkipWhiteRef().ExtractIntRef(out result).SkipWhiteRef();
-
     public static ref Span<string> SkipEmptyLines(this ref Span<string> l)
     {
         int i = 0;
@@ -127,14 +125,8 @@ public static class Util
         return dict.ToDictionary((t) => t.Value, (u) => u.Key);
     }
 
-    public static IEnumerable<T> AsEnumerable<T>(this Span<T> span) => span.ToArray();
     public static Span<char> AsSpan(this string s) => CollectionsMarshal.AsSpan(s.ToList());
 
-    public static List<T> SortSelf<T>(this List<T> list, Comparison<T> comparison)
-    {
-        list.Sort(comparison);
-        return list;
-    }
     
     public static List<T> SortSelf<T>(this List<T> list)
     {

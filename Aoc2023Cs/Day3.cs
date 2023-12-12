@@ -1,8 +1,10 @@
-﻿using System.Diagnostics;
-using System.Text;
-using Aoc2023Cs.Util2d;
+﻿namespace Aoc2023Cs;
 
-namespace Aoc2023Cs;
+using System.Diagnostics;
+using System.Text;
+
+using Vec2 = Util2d.Vec2<int>;
+using Line2 = Util2d.Line2<int>;
 
 public class Part
 {

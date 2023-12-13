@@ -46,8 +46,8 @@ public static class Util
 
     public static Span<char> Skip(this Span<char> s, int count) => s[count..];
 
-    public static ref Span<char> SkipNonInt(this ref Span<char> s) => ref s.ExtractRef(out var _, c => !IsIntDigit(c));
-    public static ref Span<char> SkipWhiteRef(this ref Span<char> s) => ref s.ExtractRef(out var _, char.IsWhiteSpace);
+    public static ref Span<char> SkipNonInt(this ref Span<char> s) => ref s.ExtractRef(out Span<char> _, c => !IsIntDigit(c));
+    public static ref Span<char> SkipWhiteRef(this ref Span<char> s) => ref s.ExtractRef(out Span<char> _, char.IsWhiteSpace);
     public static Span<char> SkipWhite(this Span<char> s) => s.Extract(out var _, char.IsWhiteSpace);
 
     public static ref Span<char> ExtractRef(this ref Span<char> s, out Span<char> result, Func<char, bool> predicate)
@@ -58,6 +58,13 @@ public static class Util
         while ((s.Length > j) && predicate(s[j])) ++j;
         result = s[i..j];
         return ref s.SkipRef(j);
+    }
+    
+    public static ref Span<char> ExtractRef(this ref Span<char> s, out string result, Func<char, bool> predicate)
+    {
+        ref Span<char> s2 = ref s.ExtractRef(out Span<char> spanResult, predicate);
+        result = new(spanResult);
+        return ref s2;
     }
     
     public static Span<char> Extract(this Span<char> s, out Span<char> result, Func<char, bool> predicate)
@@ -71,6 +78,7 @@ public static class Util
     }
     
     public static ref Span<char> ExtractStringRef(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, IsNotWhitespace);
+    public static ref Span<char> ExtractStringRef(this ref Span<char> s, out string result) => ref ExtractRef(ref s, out result, IsNotWhitespace);
     public static Span<char> ExtractString(this Span<char> s, out Span<char> result) => Extract(s, out result, IsNotWhitespace);
 
     public static bool IsNotWhitespace(this char c) => !char.IsWhiteSpace(c);
@@ -103,20 +111,12 @@ public static class Util
 
     public static Span<char> ExtractLetters(this Span<char> s, out Span<char> result) => Extract(s, out result, char.IsAsciiLetterOrDigit);
     public static ref Span<char> ExtractLettersRef(this ref Span<char> s, out Span<char> result) => ref ExtractRef(ref s, out result, char.IsAsciiLetterOrDigit);
-
+    
     public static string Replicate(this char value, int num) => new (Enumerable.Repeat(value, num).ToArray());
 
-    public static string Repeat(this string value, int num)
-    {
-        StringBuilder sb = new();
-        for (int i = 0; i < num; ++i)
-        {
-            sb.Append(value);
-        }
-        return sb.ToString();
-    }
+    public static string Replicate(this string value, int num) => value.AsSpan().Replicate(num);
 
-    public static string Repeat(this Span<char> value, int num)
+    public static string Replicate(this Span<char> value, int num)
     {
         StringBuilder sb = new();
         for (int i = 0; i < num; ++i)

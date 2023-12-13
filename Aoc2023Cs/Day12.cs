@@ -14,21 +14,38 @@ public class Day12
         long result = 0;
         foreach (string lineStr in lines)
         {
-            List<int> groups = new();
+            List<int> groupList = new();
             Span<char> line = lineStr.AsSpan();
-            line.ExtractStringRef(out var conditions_);
+            line.ExtractStringRef(out string conditions_);
             while (line.Length > 0)
             {
                 line.ExtractIntRef(out int value).SkipWhite();
-                groups.Add(value);
+                groupList.Add(value);
             }
 
-            int repeats = partOne ? 1 : 5;
-            string conditions = conditions_.Repeat(repeats);
-            groups = groups.Repeat(repeats).ToList();
+            string conditions;
+            Span<int> groups;
+            
+            if (partOne)
+            {
+                conditions = conditions_;
+                groups = groupList.ToArray();
+            }
+            else
+            {
+                var one = new [] { 1 };
+                conditions = string.Join("?", Enumerable.Repeat(conditions_, 5));
+                groups = groupList.Concat(groupList).Concat(one).
+                                   Concat(groupList).Concat(one).
+                                   Concat(groupList).Concat(one).
+                                   Concat(groupList).Concat(one).
+                                   Concat(groupList).ToArray();
+            }
             
             Console.WriteLine($"{conditions} {groups.MakeList()}");
 
+            conditions = Simplify(conditions.AsSpan(), groups);
+            
             int numArrangements = 0;
             int[] unknowns = conditions.Select((c, i) => Tuple.Create(c, i)).Where(t => (t.Item1=='?')).Select(t => t.Item2).ToArray();
             if (unknowns.Length > 0)
@@ -44,7 +61,7 @@ public class Day12
                         fixValue /= 2;
                     }
 
-                    if (PumpConditionValid(arrangement, groups))
+                    if (PumpConditionValid(arrangement, groups.ToArray()))
                     {
                         ++numArrangements;
                     }
@@ -59,7 +76,13 @@ public class Day12
         Console.WriteLine($"Part {partStr}: {result}\n");        
     }
 
-    public static bool PumpConditionValid(Span<char> conditions, IList<int> groups)
+    public static string Simplify(Span<char> s, Span<int> groups)
+    {
+        
+        return new(s);
+    }
+    
+    public static bool PumpConditionValid(Span<char> conditions, Span<int> groups)
     {
         int groupSize = 0;
         int groupIndex = 0;
@@ -67,7 +90,7 @@ public class Day12
         {
             if (conditions[i] == '#')
             {
-                if ((groupSize == 0) && (groupIndex == groups.Count)) return false;
+                if ((groupSize == 0) && (groupIndex == groups.Length)) return false;
                 ++groupSize;
             }
             else
@@ -85,6 +108,6 @@ public class Day12
             ++groupIndex;
         }
 
-        return (groupIndex == groups.Count);
+        return (groupIndex == groups.Length);
     }
 }

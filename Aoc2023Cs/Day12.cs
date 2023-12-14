@@ -1,4 +1,6 @@
-﻿namespace Aoc2023Cs;
+﻿using System.Text.RegularExpressions;
+
+namespace Aoc2023Cs;
 
 public class Day12
 {
@@ -9,7 +11,7 @@ public class Day12
         // PumpConditionValid(".###....##.#".AsSpan(), new List<int> { 3, 2, 1 });
         
         partOne = (part == 1);
-        string[] lines = "12".ReadLinesArray(test: false);
+        string[] lines = "12".ReadLinesArray(test: true);
 
         long result = 0;
         foreach (string lineStr in lines)
@@ -24,7 +26,7 @@ public class Day12
             }
 
             string conditions;
-            Span<int> groups;
+            int[] groups;
             
             if (partOne)
             {
@@ -44,45 +46,71 @@ public class Day12
             
             Console.WriteLine($"{conditions} {groups.MakeList()}");
 
-            conditions = Simplify(conditions.AsSpan(), groups);
-            
-            int numArrangements = 0;
-            int[] unknowns = conditions.Select((c, i) => Tuple.Create(c, i)).Where(t => (t.Item1=='?')).Select(t => t.Item2).ToArray();
-            if (unknowns.Length > 0)
-            {
-                long bitSize = 1 << unknowns.Length;
-                for (long i = 0; i < bitSize; ++i)
-                {
-                    long fixValue = i;
-                    char[] arrangement = conditions.ToArray();
-                    foreach (var unknownIndex in unknowns)
-                    {
-                        arrangement[unknownIndex] = ((fixValue & 1) == 1) ? '#' : '.';
-                        fixValue /= 2;
-                    }
-
-                    if (PumpConditionValid(arrangement, groups.ToArray()))
-                    {
-                        ++numArrangements;
-                    }
-                }
-                Console.WriteLine($" -> {numArrangements} arrangements found");
-                result += numArrangements;
-            }
-            Console.WriteLine();
+            int count = 0;
+            int numArrangements = Arrangement(conditions.ToCharArray(), groups, ref count);
+            Console.WriteLine($" -> {numArrangements} arrangements found");
         }
         
         string partStr = partOne ? "One" : "Two";
         Console.WriteLine($"Part {partStr}: {result}\n");        
     }
 
-    public static string Simplify(Span<char> s, Span<int> groups)
+    public static int Arrangement(char[] s, IList<int> groups, ref int count)
     {
+        ++count;
         
-        return new(s);
+        int firstUnknown = Array.IndexOf(s, '?');
+        if (firstUnknown < 0)
+        {
+            if (PumpConditionValid(s.AsSpan(), groups))
+                return 1;
+            else
+                return 0;
+        }
+
+        if (!IsValid(s, groups))
+        {
+            return 0;
+        }
+
+        s[firstUnknown] = '.';
+        int dotResult = Arrangement(s, groups, ref count);
+
+        s[firstUnknown] = '#';
+        int hashResult = Arrangement(s, groups, ref count);
+        
+        s[firstUnknown] = '?';
+
+        return dotResult + hashResult;
+    }
+
+    public static Regex groupByHash = new(@"(\#+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    
+    
+    public static bool IsValid(char[] s, IList<int> groups)
+    {
+        MatchCollection matches = groupByHash.Matches(new (s));
+        if (matches.Count == 0) return false;
+
+        int maxGroups = groups.Max();
+        int maxHashGroups = matches.Select(m => m.Groups.Count).Max();
+        if (maxHashGroups > maxGroups)
+        {
+            return false;
+        }
+
+        /*
+        int minHashGroups = matches.Select(m => m.Groups.Count).Min();
+        if (minHashGroups < maxGroups)
+        {
+            return false;
+        }
+        */
+        
+        return true;
     }
     
-    public static bool PumpConditionValid(Span<char> conditions, Span<int> groups)
+    public static bool PumpConditionValid(Span<char> conditions, IList<int> groups)
     {
         int groupSize = 0;
         int groupIndex = 0;
@@ -90,7 +118,7 @@ public class Day12
         {
             if (conditions[i] == '#')
             {
-                if ((groupSize == 0) && (groupIndex == groups.Length)) return false;
+                if ((groupSize == 0) && (groupIndex == groups.Count)) return false;
                 ++groupSize;
             }
             else
@@ -108,6 +136,6 @@ public class Day12
             ++groupIndex;
         }
 
-        return (groupIndex == groups.Length);
+        return (groupIndex == groups.Count);
     }
 }

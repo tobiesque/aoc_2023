@@ -1,4 +1,9 @@
-﻿using System.Numerics;
+﻿global using Vec2 = Aoc2023Cs.Util2d.Vec2<int>;
+global using Line2 = Aoc2023Cs.Util2d.Line2<int>;
+global using Vec2L = Aoc2023Cs.Util2d.Vec2<long>;
+global using Line2L = Aoc2023Cs.Util2d.Line2<long>;
+
+using System.Numerics;
     
 namespace Aoc2023Cs;
 

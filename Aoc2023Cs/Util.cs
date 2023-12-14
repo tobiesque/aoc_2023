@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using Newtonsoft.Json;
@@ -11,6 +12,14 @@ public static class Util
     public static TEnum ToEnum<TEnum>(this string s) where TEnum : Enum
     {
         return Enum.TryParse(typeof(TEnum), s, out var result) ? (TEnum)result : default!;
+    }
+
+    public static string Textify(this object o, [CallerArgumentExpression("o")] string objectName = "")
+    {
+        StringBuilder sb = new();
+        sb.Append($"{objectName} = ");
+        sb.Append(JsonConvert.SerializeObject(o, Formatting.Indented, new JsonSerializerSettings() { TypeNameHandling  = TypeNameHandling.All }));
+        return sb.ToString();
     }
 
     public static ref Span<char> After(this ref Span<char> s, char c)

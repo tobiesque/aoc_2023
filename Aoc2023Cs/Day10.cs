@@ -2,7 +2,6 @@
 
 using System.Diagnostics;
 
-using Vec2 = Util2d.Vec2<int>;
 
 public class Day10
 {

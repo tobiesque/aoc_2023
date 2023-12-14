@@ -3,8 +3,6 @@
 using System.Diagnostics;
 using System.Text;
 
-using Vec2 = Util2d.Vec2<long>;
-
 public class Day11
 {
     public static bool partOne = true;
@@ -14,8 +12,8 @@ public class Day11
         public long width = 0;
         public long height = 0;
         
-        public List<Vec2> galaxiesOrdered = new();
-        public HashSet<Vec2> galaxies = new();
+        public List<Vec2L> galaxiesOrdered = new();
+        public HashSet<Vec2L> galaxies = new();
 
         public Map(long width, long height)
         {
@@ -35,7 +33,7 @@ public class Day11
                 {
                     if (line[x] == '#')
                     {
-                        Vec2 pos = new(x, y);
+                        Vec2L pos = new(x, y);
                         galaxies.Add(pos);
                         galaxiesOrdered.Add(pos);
                     }
@@ -71,11 +69,11 @@ public class Day11
             Console.WriteLine($"WarpY: {warpY.MakeList()}");
             
             Map newMap = new(width + newX, height + newY);
-            foreach (Vec2 galaxy in galaxiesOrdered)
+            foreach (Vec2L galaxy in galaxiesOrdered)
             {
                 long warpedX = warpX.Warp(galaxy.x, size);
                 long warpedY = warpY.Warp(galaxy.y, size);
-                Vec2 pos = new(warpedX, warpedY);
+                Vec2L pos = new(warpedX, warpedY);
                 newMap.galaxies.Add(pos);
                 newMap.galaxiesOrdered.Add(pos);
             }
@@ -90,7 +88,7 @@ public class Day11
             {
                 for (int x = 0; x < width; ++x)
                 {
-                    Vec2 pos = new(x, y);
+                    Vec2L pos = new(x, y);
                     bool isGalaxy = galaxies.Contains(pos);
                     if (!isGalaxy)
                     {
@@ -115,18 +113,18 @@ public class Day11
         Map map = originalMap.Expand(partOne ? 2L : 1000000L);
         // Console.WriteLine($"{map}");
 
-        Vec2[] galaxies = map.galaxiesOrdered.ToArray();
+        Vec2L[] galaxies = map.galaxiesOrdered.ToArray();
         Console.WriteLine($"{galaxies.Length} galaxies");
 
         long result = 0;
         int n = 0;
         for (int i = 0; i < galaxies.Length; ++i)
         {
-            Vec2 a = galaxies[i];
+            Vec2L a = galaxies[i];
             for (int j = i + 1; j < galaxies.Length; ++j)
             {
                 Debug.Assert(i != j);
-                Vec2 b = galaxies[j];
+                Vec2L b = galaxies[j];
                 long distance = a.Distance(galaxies[j]);
                 result += distance;
                 ++n;

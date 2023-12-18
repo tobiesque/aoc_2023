@@ -5,39 +5,116 @@ namespace Aoc2023Cs;
 
 public class Day13
 {
-    public static bool partOne = true;
-
     public static void Run(int part)
     {
-        partOne = (part == 1);
         string[] lines = "13".ReadLinesArray(test: false);
+        DoRun(Read(lines));
+    }
 
-        Map[] maps = Read(lines);
-
-        int result = 0;
+    public static void Toggle(ref char c) => c = (c == '#') ? '.' : '#';
+    
+    public static void DoRun(Map[] maps)
+    {
+        int resultPartOne = 0;
+        int resultPartTwo = 0;
         foreach (Map map in maps)
         {
-            int scoreH = map.FindMirroringRows();
-            int scoreV = map.FindMirroringColumns();
-            if (scoreH > 0)
+            
+            int regularRankH = 0;
+            int regularRankV = 0;
             {
-                Debug.Assert(scoreV == 0);
-                result += scoreH * 100;
-                Console.WriteLine($"ScoreH = {scoreH * 100}");
+                int scoreH = map.FindMirroringRows(out int rankH, -1, silent: true);
+                int scoreV = map.FindMirroringColumns(out int rankV, -1, silent: true);
+                if (scoreH > 0)
+                {
+                    Debug.Assert(scoreV == 0);
+                    regularRankH = rankH;
+                    regularRankV = -1;
+                    
+                    resultPartOne += scoreH * 100;
+                }
+                else
+                {
+                    Debug.Assert(scoreV != 0);
+                    regularRankV = rankV;
+                    regularRankH = -1;
+                    
+                    resultPartOne += scoreV;
+                }
+            }
+            
+            Console.WriteLine($"Original: {regularRankH}/{regularRankV}");
+            
+            int maxResultSmudge = 0;
+            int maxScore = 0;
+            Vec2 maxPos = new Vec2();
+            for (int y = 0; y < map.height; ++y)
+            {
+                for (int x = 0; x < map.width; ++x)
+                {
+                    Vec2 pos = new Vec2(x, y);
+                    int resultSmudge = 0;
+                    int resultScore = 0;
+                    
+                    Toggle(ref map.map[x, y]);
+                    int scoreH = map.FindMirroringRows(out int rankH, regularRankH, silent: true);
+                    int scoreV = map.FindMirroringColumns(out int rankV, regularRankV, silent: true);
+                    Toggle(ref map.map[x, y]);
+
+                    bool isH = (regularRankH > 0) && (regularRankH == rankH);
+                    if (scoreH > 0)
+                    {
+                        if (!isH)
+                        {
+                            resultSmudge = scoreH;
+                            resultScore = scoreH * 100;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"  skipping {pos} - it's the original {rankH}/{regularRankH}");
+                        }
+                    }
+                    
+                    if ((scoreH <= 0) || isH)
+                    {
+                        bool isV = (regularRankV > 0) && (regularRankV == rankV);
+                        if (isV)
+                        {
+                            Console.WriteLine($"  skipping {pos} - it's the original {rankV}/{regularRankV}");
+                            continue;
+                        }
+                        resultSmudge = scoreV;
+                        resultScore = scoreV;
+                    }
+
+                    if (resultSmudge > maxResultSmudge)
+                    {
+                        maxResultSmudge = resultSmudge;
+                        maxScore = resultScore;
+                        maxPos = pos;
+                    }
+                }
+            }
+
+            if (maxResultSmudge > 0)
+            {
+                char[] smudgedColumn = map.Column(maxPos.x).ToCharArray();
+                Toggle(ref smudgedColumn[maxPos.y]);
+                Console.WriteLine($"Smudged {maxPos+new Vec2(1, 1)}: {new string(smudgedColumn)}");
+
+                resultPartTwo += maxScore;
             }
             else
             {
-                Debug.Assert(scoreV != 0);
-                result += scoreV;
-                Console.WriteLine($"ScoreV = {scoreV}");
+                Console.WriteLine(map.ToString());
+                Debug.Fail("No smudge!");
             }
-
-            Console.WriteLine();
         }
-        string partStr = partOne ? "One" : "Two";
-        Console.WriteLine($"Part {partStr}: {result}\n");        
+        
+        Console.WriteLine($"Part One: {resultPartOne}");
+        Console.WriteLine($"Part Two: {resultPartTwo}");
     }
-    
+
     public struct Map
     {
         public Map(int width, int height)
@@ -47,8 +124,8 @@ public class Day13
         
         public char[,] map;
 
-        int width => map.GetLength(0);
-        int height => map.GetLength(1);
+        public int width => map.GetLength(0);
+        public int height => map.GetLength(1);
         
         public override string ToString()
         {
@@ -82,7 +159,7 @@ public class Day13
             return sb.ToString();
         }
 
-        public int CompareColumns(int x)
+        public int CompareColumns(int x, bool silent = false)
         {
             int result = 0;
             for (int i = 0; i < width; ++i)
@@ -97,14 +174,14 @@ public class Day13
                 string right = Column(posRight);
                 if (left != right) return 0;
                 result = x + 1;
-                Console.WriteLine($"    [{posLeft:000}] [{posRight:000}] {left}");
+                if (!silent) Console.WriteLine($"    [{posLeft:000}] [{posRight:000}] {left}");
             }
 
             Debug.Fail("");
             return width;
         }
         
-        public int CompareRows(int y)
+        public int CompareRows(int y, bool silent = false)
         {
             int result = 0;
             for (int i = 0; i < height; ++i)
@@ -119,38 +196,48 @@ public class Day13
                 var down = Row(posDown);
                 if (up != down) return 0;
                 result = y + 1;
-                Console.WriteLine($"    [{posUp:000}] [{posDown:000}] {up}");
+                if (!silent) Console.WriteLine($"    [{posUp:000}] [{posDown:000}] {up}");
             }
 
             Debug.Fail("");
             return height;
         }
         
-        public int FindMirroringColumns()
+        public int FindMirroringColumns(out int rank, int except, bool silent = false)
         {
             int result = 0;
+            rank = 0;
             for (int x = 0; x < width; ++x)
             {
-                int resultX = CompareColumns(x);
-                result = Math.Max(result, resultX);
+                int resultX = CompareColumns(x, silent);
                 if (resultX > 0)
                 {
-                    Console.WriteLine($"  Y[{x}] {resultX} @ {x + 1}");
+                    if ((x + 1) != except)
+                    {
+                        rank = x + 1;
+                        result = Math.Max(result, resultX);
+                        if (!silent) Console.WriteLine($"  Y[{x}] {resultX} @ {rank}");
+                    }
                 }
             }
             return result;
         }
         
-        public int FindMirroringRows()
+        public int FindMirroringRows(out int rank, int except, bool silent = false)
         {
             int result = 0;
+            rank = 0;
             for (int y = 0; y < height; ++y)
             {
-                int resultY = CompareRows(y);
-                result = Math.Max(result, resultY);
+                int resultY = CompareRows(y, silent);
                 if (resultY > 0)
                 {
-                    Console.WriteLine($"  Y[{y}] {result} @ {y + 1}");
+                    if ((y + 1) != except)
+                    {
+                        rank = y + 1;
+                        result = Math.Max(result, resultY);
+                        if (!silent) Console.WriteLine($"  Y[{y}] {result} @ {rank}");
+                    }
                 }
             }
             return result;

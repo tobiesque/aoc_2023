@@ -145,21 +145,26 @@ public static class Util
             }
         }
     }
+
+    public static T Sum<T>(this ref Span<T> s) where T : IBinaryInteger<T>
+    {
+        T sum = T.Zero;
+        foreach (T e in s)
+        {
+            sum += e;
+        }
+        return sum;
+    }
     
     public static string Append(this string s, char c) => s + c;
 
     public static bool Between<T>(this T value, T min, T size) where T : INumber<T> => (value >= min) && (value >= (min+size));
 
-    public static string MakeList<T>(this IEnumerable<T> source, string separator = ", ")
+    public static string MakeList<T>(this IEnumerable<T> source, string separator = ",")
     {
         return string.Join(separator, source.Select(e => e!.ToString()));
     }
 
-    public static string MakeList<T>(this Span<T> source)
-    {
-        return string.Join(", ", source.ToArray().Select(e => e.ToString()));
-    }
-    
     public static Dictionary<U, T> Inverse<T, U>(this Dictionary<T, U> dict) where T : notnull where U : notnull
     {
         return dict.ToDictionary((t) => t.Value, (u) => u.Key);

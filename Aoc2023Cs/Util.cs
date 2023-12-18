@@ -178,6 +178,28 @@ public static class Util
         list.Sort();
         return list;
     }
+
+    public static IEnumerable<string[]> Split(this string[] ss, Func<string, bool> splitFunc)
+    {
+        List<string> current = new();
+        foreach (var s in ss)
+        {
+            if (splitFunc(s))
+            {
+                yield return current.ToArray();
+                current.Clear();
+            }
+            else
+            {
+                current.Add(s);
+            }
+        }
+
+        if (current.Count > 0)
+        {
+            yield return current.ToArray();
+        }
+    } 
     
     public static List<string> ReadLinesList(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToList();
     public static string[] ReadLinesArray(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToArray();
@@ -187,35 +209,5 @@ public static class Util
     {
         string inputFile = $"Input/{day}{(test ? ".tst" : ".txt")}";
         return File.ReadLines(inputFile);
-    }
-
-    public class MultiMap<TKey, TValue> : Dictionary<TKey, HashSet<TValue>> where TValue : class where TKey : notnull
-    {
-        public TValue MultiAdd(TKey key, TValue value)
-        {
-            if (!TryGetValue(key, out var set))
-            {
-                set = new();
-                Add(key, set);
-            }
-
-            if (set.TryGetValue(value, out var originalValue))
-            {
-                return originalValue!;
-            }
-            return value!;
-        }
-        
-        public void MultiRemove(TKey key, TValue value)
-        {
-            if (TryGetValue(key, out var set))
-            {
-                set.Remove(value);
-                if (set.Count == 0)
-                {
-                    Remove(key); 
-                }
-            }
-        }
     }
 }

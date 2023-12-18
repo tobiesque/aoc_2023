@@ -199,7 +199,25 @@ public static class Util
         {
             yield return current.ToArray();
         }
-    } 
+    }
+
+    public static void Swap<T>(this ref T a, ref T b) where T : struct
+    {
+        (a, b) = (b, a);
+    }
+
+    public delegate void Iterate2DAction<T>(Vec2 pos, ref T t);
+    public static void Iterate2D<T>(this T[,] t, Iterate2DAction<T> action, Action<Vec2>? lineAction = null) where T : struct
+    {
+        for (var y = 0; y < t.GetLength(1); y++)
+        {
+            for (var x = 0; x < t.GetLength(0); x++)
+            {
+                action(new Vec2(x, y), ref t[x, y]);
+            }
+            lineAction?.Invoke(new Vec2(0, y));
+        }
+    }
     
     public static List<string> ReadLinesList(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToList();
     public static string[] ReadLinesArray(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToArray();

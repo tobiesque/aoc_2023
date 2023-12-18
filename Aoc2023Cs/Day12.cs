@@ -1,7 +1,4 @@
-﻿// #define ENABLE_DEBUG_OUTPUT
-
-using System.Diagnostics;
-
+﻿using System.Diagnostics;
 
 namespace Aoc2023Cs;
 
@@ -14,7 +11,7 @@ public class Day12
         partOne = (part == 1);
         string[] lines = "12".ReadLinesArray(test: false);
 
-        UInt64 result = 0;
+        ulong result = 0;
         foreach (string lineStr in lines)
         {
             List<int> groupList = new();
@@ -41,61 +38,52 @@ public class Day12
             }
             
             Console.WriteLine($"[[{conditions} {groups.MakeList()}]]");
-
-            char[] ca = conditions.ToCharArray();
-            Context context = new Context(ca);
-            Arrangement(ca, groups, ref context, 0);
-            Console.WriteLine($" -> {context.numArrangements} arrangements found\n");
-            result += context.numArrangements;
+            ulong numArrangements = Evaluate(conditions.ToCharArray(), groups);
+            Console.WriteLine($" -> {numArrangements} arrangements found\n");
+            result += numArrangements;
         }
         
         string partStr = partOne ? "One" : "Two";
         Console.WriteLine($"Part {partStr}: {result}\n");        
     }
 
-    public ref struct Context
+    public class Entry
     {
-        public UInt64 numArrangements = 0;
-        public UInt64 count = 0;
-        public int depth = 0;
+        public string s;
+        public int[] groups;
+        public ulong hashGroup;
 
-        public Span<char> original;
-
-        public Context(Span<char> original)
+        public override int GetHashCode()
         {
-            this.original = original;
+            var groupsHash = groups.Aggregate(0, (x,y) => HashCode.Combine(x.GetHashCode(), y.GetHashCode()));
+            return HashCode.Combine(s.GetHashCode(), groupsHash, hashGroup.GetHashCode());
         }
-    }
 
-    public static int Arrangement(Span<char> s, Span<int> groups, ref Context context, int currentHashGroup)
+        public class EqualityComparer : IEqualityComparer<Entry> {
+
+            public bool Equals(Entry? x, Entry? y) => (x!.s == y!.s) && (x!.hashGroup == y!.hashGroup);
+            public int GetHashCode(Entry x) => x.GetHashCode();
+        }        
+    } 
+    
+    public static Dictionary<Entry, ulong> cacheDot = new(new Entry.EqualityComparer());
+    public static Dictionary<Entry, ulong> cacheHash = new(new Entry.EqualityComparer());
+
+    public static ulong Evaluate(char[] s, Span<int> groups)
+    {
+        cacheDot.Clear();
+        cacheHash.Clear();
+        return Arrangement(s, groups, 0, 0UL);
+    }
+    
+    public static ulong Arrangement(char[] s, Span<int> groups, int currentHashGroup, ulong key)
     {
         Debug.Assert(groups.Length != 0);
 
-        // backtrack if there are more hashes in groups than our string is long
-        // (not including required dots as separators between them)
-        if ((s.Length + currentHashGroup) < groups.Sum())
-        {
-            return 0;
-        }
-
-        ++context.count;
-
-        // for debug visualization
-        // pre = pre.Replace('#', '=').Replace('.', ':');
-        
-        // continued block of #
         int hashGroup = currentHashGroup;
 
         while (groups.Length > 0)
         {
-            int cursor = context.original.Length - s.Length;
-            string indent = new (' '.Replicate(cursor));
-            
-#if ENABLE_DEBUG_OUTPUT            
-            Console.WriteLine($"{pre}{new string (s)} - ({preGroups.MakeList()}),{groups.ToArray().MakeList()} [{context.depth}]");
-#endif
-            
-            // Try to match groups
             int currentGroup = groups[0];
 
             int i;
@@ -104,65 +92,46 @@ public class Day12
                 char c = s[i];
                 if (c == '.')
                 {
-                    // skip dots, except when they're ending a group
                     if (hashGroup > 0) break;
                 } else if (c == '#')
                 {
-                    // continue a block of #
                     ++hashGroup;
                 } else if (c == '?')
                 {
-                    ++context.depth;
-
-                    Span<char> s2 = s[i..];
-                    s2[0] = '.';
-                    Arrangement(s2, groups, ref context, hashGroup);
-                    s2[0] = '#';
-                    Arrangement(s2, groups, ref context, hashGroup);
-                    s2[0] = '?';
+                    ulong result = 0;
+                    ulong newKey = key + (ulong)i;
                     
-                    --context.depth;
-                    return 0;
+                    char[] s1 = s[i..];
+                    s1[0] = '.';
+                    Entry s1s = new (){ s = new string(s1), groups = groups.ToArray(), hashGroup = (ulong)hashGroup };
+                    if (!cacheDot.TryGetValue(s1s, out ulong result1))
+                    {
+                        result1 = Arrangement(s1, groups, hashGroup, newKey);
+                        cacheDot.Add(s1s, result1);
+                    }
+                    result += result1;
+
+                    char[] s2 = s[i..];
+                    s2[0] = '#';
+                    Entry s2s = new (){ s = new string(s2), groups = groups.ToArray(), hashGroup = (ulong)hashGroup };
+                    if (!cacheHash.TryGetValue(s2s, out ulong result2))
+                    {
+                        result2 = Arrangement(s2, groups, hashGroup, newKey);
+                        cacheHash.Add(s2s, result2);
+                    }
+                    result += result2;
+                    
+                    return result;
                 }
             }
 
-            if (hashGroup != currentGroup)
-            {
-#if ENABLE_DEBUG_OUTPUT
-                Console.WriteLine($"{indent} - {hashGroup} != {currentGroup}");
-#endif                
-                return 0;
-            }
-
-            groups = groups[1..];
-            s = s[i..];
-
-            if (groups.Length == 0)
-            {
-                bool success = !s.Contains('#');
-                if (success)
-                {
-                    ++context.numArrangements;
-                }
-#if ENABLE_DEBUG_OUTPUT
-                Console.WriteLine("{0}{1}", indent, success ? '+' : '-');
-#endif                
-                return 0;
-            }
+            if (hashGroup != currentGroup) return 0UL;
 
             hashGroup = 0;
-            if (s.Length == 0)
-            {
-#if ENABLE_DEBUG_OUTPUT
-                Console.WriteLine($"{indent} - string ended");
-#endif                
-                return 0;
-            }
-        }
-
-#if ENABLE_DEBUG_OUTPUT
-        Console.WriteLine($"- everything ended.");
-#endif                
-        return 0;
+            s = s[i..];
+            groups = groups[1..];
+            if (groups.Length == 0) return !s.Contains('#') ? 1UL : 0UL;
+        }            
+        return 0UL;
     }
 }

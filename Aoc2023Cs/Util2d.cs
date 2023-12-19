@@ -13,7 +13,19 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public T x = -T.One;
     public T y = -T.One;
 
-    public static Vec2<T> invalid = new Vec2<T>(-T.One, -T.One);
+    public static Vec2<T> up = new (T.Zero, -T.One);
+    public static Vec2<T> down = new (T.Zero, T.One);
+    public static Vec2<T> left = new (-T.One, T.Zero);
+    public static Vec2<T> right = new (T.One, T.Zero);
+
+    public bool InBounds(Vec2<T> dimension)
+    {
+        if ((x < T.Zero) || (x >= dimension.x)) return false;
+        if ((y < T.Zero) || (y >= dimension.y)) return false;
+        return true;
+    }
+
+    public static Vec2<T> invalid = new (-T.One, -T.One);
 
     public static Vec2<T> operator +(Vec2<T> a) => new(a.x, a.y);
     public static Vec2<T> operator -(Vec2<T> a) => new(-a.x, -a.y);

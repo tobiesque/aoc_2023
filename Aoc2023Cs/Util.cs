@@ -218,6 +218,18 @@ public static class Util
             lineAction?.Invoke(new Vec2(0, y));
         }
     }
+
+    public static IEnumerable<T> Loop<T>(T from, T to, bool reverse) where T : IBinaryInteger<T>
+    {
+        if (!reverse)
+        {
+            for (T i = from; i < to; ++i) yield return i;
+        }
+        else
+        {
+            for (T i = to-T.One; i >= from; --i) yield return i;
+        }
+    }
     
     public static List<string> ReadLinesList(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToList();
     public static string[] ReadLinesArray(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToArray();

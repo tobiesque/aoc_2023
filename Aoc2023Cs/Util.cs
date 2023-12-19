@@ -238,6 +238,8 @@ public static class Util
     public static IEnumerable<string> ReadLinesEnumerable(this string day, bool test = false)
     {
         string inputFile = $"Input/{day}{(test ? ".tst" : ".txt")}";
-        return File.ReadLines(inputFile);
+        return File.ReadLines(day.GetInputFile(test));
     }
+
+    public static string GetInputFile(this string day, bool test = false) => $"Input/{day}{(test ? ".tst" : ".txt")}";
 }

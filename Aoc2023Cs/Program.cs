@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 
 int day = 19;
-int part = 1;
+int part = 2;
 
 
 

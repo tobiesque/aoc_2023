@@ -9,14 +9,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Content Include="..\*.t?t">
-          <Link>Input\%(FileName)%(Extension)</Link>
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </Content>
+        <Content Include="..\*.t?t">
+            <Link>Input\%(FileName)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Day1.cs" />
+      <EditorConfigFiles Include="Day1.cs" />
+    </ItemGroup>
 </Project>

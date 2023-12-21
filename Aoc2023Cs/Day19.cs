@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Formats.Asn1;
 using Rock.Collections;
 
 namespace Aoc2023Cs;
@@ -7,27 +6,14 @@ namespace Aoc2023Cs;
 public class Day19
 {
     public static bool partOne = true;
-    public static bool generate = false;
 
     public static void Run(int part)
     {
         partOne = (part == 1);
-        if (generate)
-        {
-            GeneratePartOne.Generate();
-            return;
-        }
 
-        if (partOne)
-        {
-            foreach (var part_ in Part.parts) part_.in_();
-            Console.WriteLine($"Part One: {Part.score}");
-            return;
-        }
-
-        // part two
-        CreaateWorkflows();
-        DoVariables();
+        string[] lines = "19".ReadLinesArray(test: true);
+        CreateWorkflows(lines);
+        DoVariables(lines);
     }
 
     public static void RunWorkflows()
@@ -36,9 +22,8 @@ public class Day19
         workflow.Do();
     }
     
-    public static void CreaateWorkflows()
+    public static void CreateWorkflows(string[] lines)
     {
-        string[] lines = "19".ReadLinesArray(test: true);
         foreach (var line in lines)
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
@@ -46,8 +31,6 @@ public class Day19
             
             Span<char> lineSp = line.AsSpan();
             lineSp.ExtractRef(out string workflowName, c => c != '{').SkipRef(1);
-
-            // Console.WriteLine($"Workflow {workflowName}");
 
             if (!Workflow.workflows.TryGetValue(workflowName, out Workflow workflow))
             {
@@ -59,8 +42,6 @@ public class Day19
             string[] rules = rulesStr.Split(',');
             foreach (var ruleDesc in rules)
             {
-                // Console.WriteLine($"    {ruleDesc}");
-
                 Workflow.Rule rule = new() { };
                 workflow.rules.Add(rule);
                 string[] rulesSplit = ruleDesc.Split(':');
@@ -82,16 +63,17 @@ public class Day19
         }
     }
 
-    public static void DoVariables()
+    public static void DoVariables(string[] lines)
     {
         long resultPartOne = 0;
         
-        string[] lines = "19".ReadLinesArray(test: true);
         foreach (var line in lines)
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
             if (!line.StartsWith('{')) continue;
 
+            Console.WriteLine($"{line}");
+            
             Workflow.result = 0;            
             Span<char> lineSp = line.AsSpan();
             
@@ -153,7 +135,7 @@ public class Workflow
 
     public bool Do()
     {
-        Console.WriteLine($"->{name}");
+        Console.Write($"->{name}");
         foreach (var rule in rules)
         {
             string followup = rule.Do();
@@ -163,13 +145,14 @@ public class Workflow
             }
             if (followup == "A")
             {
-                result += variables.Values.Sum();
-                Console.WriteLine($"  ->Accepted");
+                long score = variables.Values.Sum();
+                result += score;
+                Console.WriteLine($"->Accepted ({score})");
                 return true;
             }
             if (followup == "R")
             {
-                Console.WriteLine($"  ->Rejected");
+                Console.WriteLine($"->Rejected");
                 return true;
             }
                 

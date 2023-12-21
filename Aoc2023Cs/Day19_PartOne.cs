@@ -3,17 +3,11 @@ using Rock.Collections;
 
 namespace Aoc2023Cs;
 
-public class Day19
+public class Day19_PartOne
 {
-    public static bool partOne = true;
-
-    public static void Run(int part)
+    public static void Run()
     {
-        partOne = (part == 1);
-
-        if (partOne) { Day19_PartOne.Run(); return; }
-        
-        string[] lines = "19".ReadLinesArray(test: true);
+        string[] lines = "19".ReadLinesArray(test: false);
         CreateWorkflows(lines);
         DoVariables(lines);
     }
@@ -21,13 +15,15 @@ public class Day19
     public static void RunWorkflows()
     {
         Workflow workflow = Workflow.workflows["in"];
+        workflow.Do();
     }
     
     public static void CreateWorkflows(string[] lines)
     {
         foreach (var line in lines)
         {
-            if (string.IsNullOrWhiteSpace(line) || line.StartsWith('{')) continue;
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            if (line.StartsWith('{')) continue;
             
             Span<char> lineSp = line.AsSpan();
             lineSp.ExtractRef(out string workflowName, c => c != '{').SkipRef(1);
@@ -49,7 +45,7 @@ public class Day19
                 {
                     rule.op = ' ';
                     rule.value = 0;
-                    workflowName = rulesSplit[0];
+                    rule.followWorkflow = rulesSplit[0];
                 }
                 else
                 {
@@ -57,15 +53,8 @@ public class Day19
                     string[] assignment = rulesSplit[0].Split(rule.op);
                     rule.variable = assignment[0];
                     rule.value = long.Parse(assignment[1]);
-                    workflowName = rulesSplit[1];
+                    rule.followWorkflow = rulesSplit[1];
                 }
-                
-                if (!Workflow.workflows.TryGetValue(workflowName, out rule.followUp))
-                {
-                    rule.followUp = new() { name = workflowName };
-                    Workflow.workflows.Add(workflowName, rule.followUp);
-                }
-                rule.followUp.backlinks.Add(workflow);
             }
         }
     }
@@ -102,42 +91,79 @@ public class Day19
         
         Console.WriteLine($"Part One: {resultPartOne}");
     }
-}
 
-public class Workflow
-{
-    public static long result = 0;
-
-    public class Rule
+    public class Workflow
     {
-        public enum Op { Greater, Lesser, None };
+        public static long result = 0;
 
-        public char op;
-        public string variable;
-        public long value;
-        public Workflow followUp;
-    }
+        public class Rule
+        {
+            public string variable;
+            public char op; // >, <, ' '
+            public long value;
+            public string followWorkflow;
 
-    public class RuleGreater : Rule
-    {
-        
-    }
+            public string Do()
+            {
+                long variableValue = !string.IsNullOrWhiteSpace(variable) ? variables[variable] : 0;
+                switch (op)
+                {
+                    case '>':
+                        if (variableValue > value) return followWorkflow;
+                        break;
+                
+                    case '<':
+                        if (variableValue < value) return followWorkflow;
+                        break;
+                
+                    case ' ':
+                        return followWorkflow;
+                
+                    default:
+                        Debug.Fail("Unknown op");
+                        break;
+                }
 
-    public class RuleLesser : Rule
-    {
-        
-    }
+                return "";
+            }
+        }
 
-    public class RuleFallback : Rule
-    {
-        
-    }
+        public bool Do()
+        {
+            Console.Write($"->{name}");
+            foreach (var rule in rules)
+            {
+                string followup = rule.Do();
+                if (followup == "")
+                {
+                    continue;
+                }
+                if (followup == "A")
+                {
+                    long score = variables.Values.Sum();
+                    result += score;
+                    Console.WriteLine($"->Accepted ({score})");
+                    return true;
+                }
+                if (followup == "R")
+                {
+                    Console.WriteLine($"->Rejected");
+                    return true;
+                }
+                
+                Workflow workflow = workflows[followup];
+                if (workflow.Do())
+                {
+                    return true;
+                }
+            }
 
-    public static Dictionary<string, long> variables = new();
+            return false;
+        }
+
+        public static OrderedDictionary<string, Workflow> workflows = new();
+        public static Dictionary<string, long> variables = new();
     
-    public static OrderedDictionary<string, Workflow> workflows = new();
-    
-    public string name;
-    public List<Rule> rules = new();
-    public List<Workflow> backlinks = new();
+        public string name;
+        public List<Rule> rules = new();    }
 }

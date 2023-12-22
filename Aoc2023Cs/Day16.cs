@@ -10,16 +10,47 @@ public class Day16
     public static void Run(int part)
     {
         partOne = (part == 1);
-        string[] lines = "16".ReadLinesArray(test: true);
+        string[] lines = "16".ReadLinesArray(test: false);
 
         Grid grid = new(lines);
-        grid.LightWalk(Vec2.zero, Vec2.right, new ());
-        Console.WriteLine(grid);
-        Console.WriteLine();
-        Console.WriteLine(grid.ToStringDirection());
-        Console.WriteLine(grid.ToStringEnergized());
+
+        if (partOne)
+        {
+            grid.LightWalk(Vec2.zero, Vec2.right );
+            Console.WriteLine(grid);
+            Console.WriteLine();
+            Console.WriteLine(grid.ToStringDirection());
+            Console.WriteLine(grid.ToStringEnergized());
         
-        Console.WriteLine($"Part One: {grid.NumEnergized}");
+            Console.WriteLine($"Part One: {grid.NumEnergized}");
+            return;
+        }
+
+        long result = 0;
+        for (int y = 0; y < grid.height; ++y)
+        {
+            grid.LightWalk(new (0, y), Vec2.right);
+            result = long.Max(result, grid.NumEnergized);
+        }
+        
+        for (int y = 0; y < grid.height; ++y)
+        {
+            grid.LightWalk(new (grid.width - 1, y), Vec2.left);
+            result = long.Max(result, grid.NumEnergized);
+        }
+        
+        for (int x = 0; x < grid.width; ++x)
+        {
+            grid.LightWalk(new (x, 0), Vec2.down);
+            result = long.Max(result, grid.NumEnergized);
+        }
+        
+        for (int x = 0; x < grid.width; ++x)
+        {
+            grid.LightWalk(new (x, grid.height - 1), Vec2.up);
+            result = long.Max(result, grid.NumEnergized);
+        }
+        Console.WriteLine($"Part Two: {result}");
     }
 
     public struct Mirror(char c)
@@ -151,9 +182,32 @@ public class Day16
             return (pos.x >= 0) && (pos.y >= 0) && (pos.x < width) && (pos.y < height);
         }
 
+        public void Clear()
+        {
+            visited = new();
+            
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    mirrors[x, y].beams = 0;
+                    mirrors[x, y].energized = 0;
+                    mirrors[x, y].v = '.';
+                }
+            }
+        }
+
         public long NumEnergized => All().Count(m => (m.energized > 0));
 
-        public void LightWalk(Vec2 pos, Vec2 v, HashSet<KeyValuePair<Vec2, Vec2>> visited)
+        public void LightWalk(Vec2 pos, Vec2 v)
+        {
+            Clear();
+            LightWalkRecursive(pos, v);
+        }
+
+        private static HashSet<KeyValuePair<Vec2, Vec2>> visited;
+        
+        private void LightWalkRecursive(Vec2 pos, Vec2 v)
         {
             if (!InBounds(pos))
             {
@@ -171,9 +225,9 @@ public class Day16
             v = mirrors[pos.x, pos.y].Pass(v, out Vec2? splitVector);
             if (splitVector != null)
             {
-                LightWalk(pos + splitVector.Value, splitVector.Value, visited);
+                LightWalkRecursive(pos + splitVector.Value, splitVector.Value);
             }
-            LightWalk(pos + v, v, visited);
+            LightWalkRecursive(pos + v, v);
         }
     }
 }

@@ -17,7 +17,7 @@ public class Day19
             return;
         }
 
-        string[] lines = "19".ReadLinesArray(test: true);
+        string[] lines = "19".ReadLinesArray(test: false);
         CreateWorkflows(lines);
         RunWorkflows();
 
@@ -77,7 +77,7 @@ public class Day19
                 {
                     rule.op = rulesSplit[0].Contains('>') ? '>' : '<';
                     string[] assignment = rulesSplit[0].Split(rule.op);
-                    rule.variableIndex = assignment[0] switch { "x" => 0, "m" => 1, "a" => 2, "s" => 3, _ => -1 };
+                    rule.varIndex = assignment[0] switch { "x" => 0, "m" => 1, "a" => 2, "s" => 3, _ => -1 };
                     rule.value = long.Parse(assignment[1]);
                     workflowName = rulesSplit[1];
                 }
@@ -106,33 +106,8 @@ public class Workflow
     {
         public char op;
         public long value;
-        public int variableIndex;
+        public int varIndex;
         public Workflow? followUp;
-
-        public void Do(Range[] range)
-        {
-            Console.Write($"->{variableIndex}{op}{value}");
-            switch (op)
-            {
-                case '>':
-                    range[variableIndex].lower = long.Max(value, range[variableIndex].lower);
-                    followUp!.Do(range.ToArray());
-                    break;
-
-                case '<':
-                    range[variableIndex].upper = long.Min(value, range[variableIndex].upper);
-                    followUp!.Do(range.ToArray());
-                    break;
-
-                case ' ':
-                    followUp!.Do(range.ToArray());
-                    break;
-
-                default:
-                    Debug.Fail("Unknown op");
-                    break;
-            }
-        }
     }
 
     public void Do(Range[] range)
@@ -143,19 +118,43 @@ public class Workflow
             {
                 ranges[i].Add(range[i]);
             }
-
             return;
         }
 
-        if (name == "R")
-        {
-            return;
-        }
+        if (name == "R") { return; }
         
-        Console.Write($"->{name}");
         foreach (var rule in rules)
         {
-            rule.Do(range.ToArray());
+            switch (rule.op)
+            {
+                case '>':
+                    {
+                        var newRange = range.ToArray();
+                        newRange[rule.varIndex].lower = long.Max(rule.value+1, newRange[rule.varIndex].lower);
+                        rule.followUp!.Do(newRange);
+                        
+                        range[rule.varIndex].upper = long.Min(rule.value, range[rule.varIndex].upper);
+                    }
+                    break;
+
+                case '<':
+                    {
+                        var newRange = range.ToArray();
+                        newRange[rule.varIndex].upper = long.Min(rule.value-1, newRange[rule.varIndex].upper);
+                        rule.followUp!.Do(newRange);
+                        
+                        range[rule.varIndex].lower = long.Max(rule.value, range[rule.varIndex].lower);
+                    }
+                    break;
+
+                case ' ':
+                    rule.followUp!.Do(range.ToArray());
+                    break;
+
+                default:
+                    Debug.Fail("Unknown op");
+                    break;
+            }
         }
     }
 

@@ -11,24 +11,46 @@ public class Day19
     {
         partOne = (part == 1);
 
-        if (partOne) { Day19_PartOne.Run(); return; }
-        
+        if (partOne)
+        {
+            Day19_PartOne.Run();
+            return;
+        }
+
         string[] lines = "19".ReadLinesArray(test: true);
         CreateWorkflows(lines);
-        DoVariables(lines);
+        RunWorkflows();
+
+        long result = 0;
+        for (var j = 0; j < Workflow.ranges[0].Count; j++)
+        {
+            long score = 1;
+            for (var i = 0; i < 4; i++)
+            {
+                Workflow.Range singleRange = Workflow.ranges[i][j];
+                Console.Write($"{i}:[{singleRange.lower}-{singleRange.upper}] ");
+                score *= singleRange.upper - singleRange.lower + 1;
+            }
+            Console.WriteLine($"= {score}");
+
+            result += score;
+        }
+        
+        Console.WriteLine($"Part Two: {result}");
     }
 
     public static void RunWorkflows()
     {
         Workflow workflow = Workflow.workflows["in"];
+        workflow.Do([new(), new(), new(), new()]);
     }
-    
+
     public static void CreateWorkflows(string[] lines)
     {
         foreach (var line in lines)
         {
             if (string.IsNullOrWhiteSpace(line) || line.StartsWith('{')) continue;
-            
+
             Span<char> lineSp = line.AsSpan();
             lineSp.ExtractRef(out string workflowName, c => c != '{').SkipRef(1);
 
@@ -55,89 +77,92 @@ public class Day19
                 {
                     rule.op = rulesSplit[0].Contains('>') ? '>' : '<';
                     string[] assignment = rulesSplit[0].Split(rule.op);
-                    rule.variable = assignment[0];
+                    rule.variableIndex = assignment[0] switch { "x" => 0, "m" => 1, "a" => 2, "s" => 3, _ => -1 };
                     rule.value = long.Parse(assignment[1]);
                     workflowName = rulesSplit[1];
                 }
-                
+
                 if (!Workflow.workflows.TryGetValue(workflowName, out rule.followUp))
                 {
                     rule.followUp = new() { name = workflowName };
                     Workflow.workflows.Add(workflowName, rule.followUp);
                 }
-                rule.followUp.backlinks.Add(workflow);
             }
         }
-    }
-
-    public static void DoVariables(string[] lines)
-    {
-        long resultPartOne = 0;
-        
-        foreach (var line in lines)
-        {
-            if (string.IsNullOrWhiteSpace(line)) continue;
-            if (!line.StartsWith('{')) continue;
-
-            Console.WriteLine($"{line}");
-            
-            Workflow.result = 0;            
-            Span<char> lineSp = line.AsSpan();
-            
-            Workflow.variables.Clear();
-            lineSp.SkipRef(1).ExtractRef(out string defsStr, c => c != '}');
-            string[] defs = defsStr.Split(',');
-            foreach (var def in defs)
-            {
-                string[] defDecl = def.Split('=');
-                string variable = defDecl[0];
-                long value = int.Parse(defDecl[1]);
-                Workflow.variables[variable] = value;
-            }
-
-            RunWorkflows();
-            
-            resultPartOne += Workflow.result;
-        }
-        
-        Console.WriteLine($"Part One: {resultPartOne}");
     }
 }
 
 public class Workflow
 {
-    public static long result = 0;
+    public struct Range
+    {
+        public long lower = 1;
+        public long upper = 4000;
+
+        public Range() {}
+    }
 
     public class Rule
     {
-        public enum Op { Greater, Lesser, None };
-
         public char op;
-        public string variable;
         public long value;
-        public Workflow followUp;
+        public int variableIndex;
+        public Workflow? followUp;
+
+        public void Do(Range[] range)
+        {
+            Console.Write($"->{variableIndex}{op}{value}");
+            switch (op)
+            {
+                case '>':
+                    range[variableIndex].lower = long.Max(value, range[variableIndex].lower);
+                    followUp!.Do(range.ToArray());
+                    break;
+
+                case '<':
+                    range[variableIndex].upper = long.Min(value, range[variableIndex].upper);
+                    followUp!.Do(range.ToArray());
+                    break;
+
+                case ' ':
+                    followUp!.Do(range.ToArray());
+                    break;
+
+                default:
+                    Debug.Fail("Unknown op");
+                    break;
+            }
+        }
     }
 
-    public class RuleGreater : Rule
+    public void Do(Range[] range)
     {
+        if (name == "A")
+        {
+            for (var i = 0; i < range.Length; i++)
+            {
+                ranges[i].Add(range[i]);
+            }
+
+            return;
+        }
+
+        if (name == "R")
+        {
+            return;
+        }
         
+        Console.Write($"->{name}");
+        foreach (var rule in rules)
+        {
+            rule.Do(range.ToArray());
+        }
     }
 
-    public class RuleLesser : Rule
-    {
-        
-    }
-
-    public class RuleFallback : Rule
-    {
-        
-    }
-
-    public static Dictionary<string, long> variables = new();
+    public static List<Range>[] ranges = [[], [], [], []];
     
     public static OrderedDictionary<string, Workflow> workflows = new();
     
     public string name;
     public List<Rule> rules = new();
-    public List<Workflow> backlinks = new();
 }

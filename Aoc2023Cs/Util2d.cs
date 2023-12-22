@@ -13,10 +13,32 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public T x = -T.One;
     public T y = -T.One;
 
+    public static Vec2<T> zero = new (T.Zero, T.Zero);
     public static Vec2<T> up = new (T.Zero, -T.One);
     public static Vec2<T> down = new (T.Zero, T.One);
     public static Vec2<T> left = new (-T.One, T.Zero);
     public static Vec2<T> right = new (T.One, T.Zero);
+
+    public char DirectionChar
+    {
+        get
+        {
+            if (y == T.Zero)
+            {
+                if (x > T.Zero) return '>';
+                if (x == T.Zero) return 'o';
+                return '<';
+            }
+
+            if (x == T.Zero)
+            {
+                if (y > T.Zero) return 'V';
+                if (y == T.Zero) return 'o';
+                return '^';
+            }
+            return ' ';
+        }
+    }
 
     public bool InBounds(Vec2<T> dimension)
     {
@@ -43,6 +65,9 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public bool Equals(Vec2<T> a, Vec2<T> b) => (a.x == b.x) && (a.y == b.y);
     public bool Equals(Vec2<T> b) => (x == b.x) && (y == b.y);
     public override bool Equals(object? b) => (b is Vec2<T> other) && Equals(other);
+
+    public bool IsHorizontal => (x != T.Zero) && (y == T.Zero);
+    public bool IsVertical => (x == T.Zero) && (y != T.Zero);
 
     public override string ToString() => $"({x}, {y})";
 }

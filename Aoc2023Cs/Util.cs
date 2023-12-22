@@ -231,6 +231,46 @@ public static class Util
         }
     }
     
+    public static TSource MinElement<TSource, TResult>(this IEnumerable<TSource> source, Func<TSource, TResult> selector) where TResult : struct, IBinaryInteger<TResult> where TSource : class
+    {
+        using IEnumerator<TSource> e = source.GetEnumerator();
+        if (!e.MoveNext())
+        {
+            return default;
+        }
+
+        TSource minSource = e.Current;
+        TResult value = selector(e.Current);
+        while (e.MoveNext())
+        {
+            TResult x = selector(e.Current);
+            if (x >= value) continue;
+            minSource = e.Current;
+            value = x;
+        }
+        return minSource;
+    }
+    
+    public static TSource MaxElement<TSource, TResult>(this IEnumerable<TSource> source, Func<TSource, TResult> selector) where TResult : struct, IBinaryInteger<TResult>
+    {
+        using IEnumerator<TSource> e = source.GetEnumerator();
+        if (!e.MoveNext())
+        {
+            return default;
+        }
+
+        TSource maxSource = e.Current;
+        TResult value = selector(e.Current);
+        while (e.MoveNext())
+        {
+            TResult x = selector(e.Current);
+            if (x <= value) continue;
+            maxSource = e.Current;
+            value = x;
+        }
+        return maxSource;
+    }
+    
     public static List<string> ReadLinesList(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToList();
     public static string[] ReadLinesArray(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToArray();
     public static Span<string> ReadLinesSpan(this string day, bool test = false) => ReadLinesArray(day, test);

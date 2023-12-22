@@ -14,10 +14,12 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public T y = -T.One;
 
     public static Vec2<T> zero = new (T.Zero, T.Zero);
+    
     public static Vec2<T> up = new (T.Zero, -T.One);
     public static Vec2<T> down = new (T.Zero, T.One);
     public static Vec2<T> left = new (-T.One, T.Zero);
     public static Vec2<T> right = new (T.One, T.Zero);
+    public static Vec2[] directions = [Vec2.right, Vec2.down, Vec2.left, Vec2.up];
 
     public char DirectionChar
     {

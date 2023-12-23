@@ -51,6 +51,8 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
 
     public static Vec2<T> invalid = new (-T.One, -T.One);
 
+    public static Vec2<T> operator *(Vec2<T> v, T n) => new(v.x * n, v.y * n);
+    
     public static Vec2<T> operator +(Vec2<T> a) => new(a.x, a.y);
     public static Vec2<T> operator -(Vec2<T> a) => new(-a.x, -a.y);
     public static Vec2<T> operator +(Vec2<T> a, Vec2<T> b) => new(a.x + b.x, a.y + b.y);

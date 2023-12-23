@@ -10,27 +10,35 @@ public class Day17
     public static void Run(int part)
     {
         partOne = (part == 1);
-        string[] lines = "17".ReadLinesArray(test: true);
+        string[] lines = "17".ReadLinesArray(test: false);
 
         Grid grid = new(lines);
+        grid.FillNodes();
+
         Console.WriteLine(grid);
-        var path = grid.Walk(Vec2.zero, new Vec2(grid.width -1, grid.height - 1));
-        Console.WriteLine(grid.ToStringPath(path));
-        Console.WriteLine($"Part One: {path.Sum(p => p.heat)}");
+        grid.Walk(true);
+        grid.Walk(false);
+
+        var pathH = grid.CreatePath(true);
+        var pathV = grid.CreatePath(false);
+        long result = long.Min(pathH.Max(p => p.g), pathV.Max(p => p.g));
+        
+        Console.WriteLine($"Part One: {result}");
     }
 
     public class Grid
     {
-        public PathNode[,] nodes;
-
-        public int width => nodes.GetLength(0);
-        public int height => nodes.GetLength(1);
-
-        public PathNode endNode;
         
+        public Node[,] hNodes;
+        public Node[,] vNodes;
+
+        public int width => hNodes.GetLength(0);
+        public int height => hNodes.GetLength(1);
+
         public Grid(int width, int height)
         {
-            nodes = new PathNode[width, height];
+            hNodes = new Node[width, height];
+            vNodes = new Node[width, height];
         }
 
         public Grid(string[] lines) : this(lines[0].Length, lines.Length)
@@ -40,22 +48,29 @@ public class Day17
                 for (int x = 0; x < width; x++)
                 {
                     long heat = long.Parse(lines[y][x].ToString());
-                    nodes[x, y] = new PathNode(new Vec2(x, y), heat);
+                    hNodes[x, y] = new Node(new Vec2(x, y), heat, true);
+                    vNodes[x, y] = new Node(new Vec2(x, y), heat, false);
                 }
             }
 
-            endNode = nodes[width - 1, height - 1];
+            startPos = new(0, 0);
+            endPos = new (width - 1, height - 1);
             
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
-                    nodes[x, y].h = nodes[x, y].pos.Distance(endNode.pos);
+                    hNodes[x, y].h = hNodes[x, y].pos.Distance(endPos);
+                    vNodes[x, y].h = vNodes[x, y].pos.Distance(endPos);
                 }
             }
         }
 
-        public PathNode this[Vec2 pos] => nodes[pos.x, pos.y];
+        public Vec2 startPos;
+        public Vec2 endPos;
+        
+        public Node H(Vec2 pos) => hNodes[pos.x, pos.y];
+        public Node V(Vec2 pos) => vNodes[pos.x, pos.y];
         
         public bool InBounds(Vec2 pos)
         {
@@ -69,7 +84,7 @@ public class Day17
             {
                 for (int x = 0; x < width; x++)
                 {
-                    sb.Append((char)('0' + nodes[x, y].heat));
+                    sb.Append((char)('0' + hNodes[x, y].heat));
                 }
 
                 sb.AppendLine();
@@ -77,7 +92,7 @@ public class Day17
             return sb.ToString();
         }
 
-        public string ToStringPath(PathNode[] path)
+        public string ToStringPath(Node[] path)
         {
             HashSet<Vec2> pathSet = path.Select(n => n.pos).ToHashSet();
             StringBuilder sb = new();
@@ -92,7 +107,7 @@ public class Day17
                     }
                     else
                     {
-                        sb.Append((char)('0' + nodes[x, y].heat));
+                        sb.Append((char)('0' + hNodes[x, y].heat));
                     }
                 }
 
@@ -101,33 +116,42 @@ public class Day17
             return sb.ToString();
         }
 
-        public class PathNode : IComparable<PathNode>
+        public class Node
         {
-            public Vec2 pos;
+            public readonly Vec2 pos;
+            public readonly long heat;
+            public readonly bool isHorizontal; // for hashcode diff between hNodes and vNodes
+
+
+            public struct Neighbour(Node node, long heat)
+            {
+                public Node node = node;
+                public long heat = heat;
+            }
+            
+            public List<Neighbour> neighbours = new();
+            
             public long g = 0;
             public long h = 0;
             public long f => g + h;
-            public PathNode parent = null;
-            public Vec2 direction;
-            public int directionMoves = 1;
-
-            public long heat;
-
-            public PathNode(Vec2 pos, long heat)
+            public Node parent = null;
+            
+            public Node(Vec2 pos, long heat, bool isHorizontal)
             {
                 this.pos = pos;
                 this.heat = heat;
+                this.isHorizontal = isHorizontal;
             }
 
-            public int CompareTo(PathNode? other)
+            public override int GetHashCode()
             {
-                return (f == other!.f) ? h.CompareTo(other!.h) : f.CompareTo(other!.f);
+                return HashCode.Combine(pos.GetHashCode(), isHorizontal.GetHashCode());
             }
         }
 
-        private PathNode MinF()
+        private Node MinF()
         {
-            PathNode minF = open[0];
+            Node minF = open[0];
             for (int i = 1; i < open.Count; i++)
             {
                 if ((open[i].f < minF.f) || ((open[i].f == minF.f) && (open[i].h < minF.h)))
@@ -138,67 +162,90 @@ public class Day17
             return minF;
         }        
         
-        public List<PathNode> open = new ();
-        public HashSet<PathNode> closed = new ();
+        public List<Node> open = new ();
+        public HashSet<Node> closed = new ();
         
-        public PathNode[] Walk(Vec2 startPos, Vec2 endPos)
+        public bool Walk(bool horizontal)
         {
-            open.Add(this[startPos]);
+            FillNodes();
+            
+            open.Add(horizontal ? H(startPos) : V(startPos));
             
             while (open.Count > 0)
             {
-                PathNode node = MinF();
+                Node node = MinF();
                 if (node.pos == endPos)
                 {
-                    return CreatePath(this[startPos]);
+                    return true;
                 }
                 
-                closed.Add(node);                
+                closed.Add(node);
                 open.Remove(node);
 
-                foreach (var direction in Vec2.directions)
-                {
-                    if (direction == -node.direction) continue;
+                foreach(Node.Neighbour neighbour in node.neighbours) {
+                    if (closed.Contains(neighbour.node)) continue;
 
-                    Vec2 newPos = node.pos + direction;
-                    if (!InBounds(newPos)) continue;
-                    
-                    PathNode neighbour = this[newPos];
-                    if (closed.Contains(neighbour)) continue;
-
-                    int directionMoves = (direction == node.direction) ? node.directionMoves + 1 : 1;
-                    if (directionMoves >= 3) continue;
-                    
-                    long movementCost = node.g + neighbour.heat + node.pos.Distance(neighbour.pos);
-                    if ((movementCost < neighbour.g) || !open.Contains(neighbour))
+                    long movementCost = node.g + neighbour.heat;
+                    if ((movementCost < neighbour.node.g) || !open.Contains(neighbour.node))
                     {
-                        neighbour.g = movementCost;
-                        neighbour.h = neighbour.pos.Distance(endNode.pos);
-                        neighbour.parent = node;
-                        neighbour.directionMoves = directionMoves;
-                        neighbour.direction = direction;
-                        if (!open.Contains(neighbour))
+                        neighbour.node.g = movementCost;
+                        neighbour.node.h = neighbour.node.pos.Distance(endPos);
+                        neighbour.node.parent = node;
+                        if (!open.Contains(neighbour.node))
                         {
-                            open.Add(neighbour);
+                            open.Add(neighbour.node);
                         }
                     }
                 }
             }
 
-            return [];
+            return false;
         }
         
-        private PathNode[] CreatePath(PathNode startNode)
+        public Node[] CreatePath(bool horizontal)
         {
-            List<PathNode> path = new List<PathNode>();
-            PathNode node = endNode;
-            while (node != startNode)
+            List<Node> path = new List<Node>();
+            Node node = horizontal ? H(endPos) : V(endPos);
+            while (node.pos != startPos)
             {
                 path.Add(node);
                 node = node.parent;
             }
             path.Reverse();
             return path.ToArray();
+        }
+
+        public void FillNodes()
+        {
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    FillNode(hNodes[x, y]);
+                    FillNode(vNodes[x, y]);
+                }
+            }
+        }
+
+        private void FillNode(Node node)
+        {
+            Vec2[] directions = node.isHorizontal ? [Vec2.down, Vec2.up] : [Vec2.right, Vec2.left];
+            
+            foreach (Vec2 direction in directions)
+            {
+                Vec2 newPos = node.pos;
+                long newHeat = 0;
+                for (int i = 0; i <= 2; ++i)
+                {
+                    newPos += direction;
+                    if (!InBounds(newPos)) continue;
+
+                    Node newNode = node.isHorizontal ? V(newPos) : H(newPos);
+                    newHeat += newNode.heat;
+
+                    node.neighbours.Add(new (newNode, newHeat));
+                }
+            }
         }        
     }
 }

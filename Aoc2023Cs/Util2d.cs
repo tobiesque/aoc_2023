@@ -2,6 +2,11 @@
 
 namespace Aoc2023Cs.Util2d;
 
+public static class NumbersUtil<TValue> {
+    public static TValue GetMaxValue => ((TValue)typeof(TValue).GetField("MaxValue")!.GetValue(null)!)!;
+    public static TValue GetMinValue => ((TValue)typeof(TValue).GetField("MinValue")!.GetValue(null)!)!;
+}
+
 public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
 {
     public Vec2(T x, T y)
@@ -14,12 +19,14 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public T y = -T.One;
 
     public static Vec2<T> zero = new (T.Zero, T.Zero);
+    public static Vec2<T> MaxValue = new (NumbersUtil<T>.GetMaxValue, NumbersUtil<T>.GetMaxValue);
+    public static Vec2<T> MinValue = new (NumbersUtil<T>.GetMinValue, NumbersUtil<T>.GetMinValue);
     
     public static Vec2<T> up = new (T.Zero, -T.One);
     public static Vec2<T> down = new (T.Zero, T.One);
     public static Vec2<T> left = new (-T.One, T.Zero);
     public static Vec2<T> right = new (T.One, T.Zero);
-    public static Vec2[] directions = [Vec2.right, Vec2.down, Vec2.left, Vec2.up];
+    public static Vec2<T>[] directions = [Vec2<T>.right, Vec2<T>.down, Vec2<T>.left, Vec2<T>.up];
 
     public char DirectionChar
     {
@@ -54,6 +61,10 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public static Vec2<T> operator *(Vec2<T> v, T n) => new(v.x * n, v.y * n);
     public static Vec2<T> Max(Vec2<T> a, Vec2<T> b) => new(T.Max(a.x, b.x), T.Max(a.y, b.y));
     public static Vec2<T> Min(Vec2<T> a, Vec2<T> b) => new(T.Min(a.x, b.x), T.Min(a.y, b.y));
+    public Vec2<T> Max(Vec2<T> other) => new(T.Max(x, other.x), T.Max(y, other.y));
+    public Vec2<T> Min(Vec2<T> other) => new(T.Min(x, other.x), T.Min(y, other.y));
+    public Vec2<T> MaxSelf(Vec2<T> other) => this = Max(other);
+    public Vec2<T> MinSelf(Vec2<T> other) => this = Min(other);
     
     public static Vec2<T> operator +(Vec2<T> a) => new(a.x, a.y);
     public static Vec2<T> operator -(Vec2<T> a) => new(-a.x, -a.y);

@@ -3,6 +3,8 @@ using System.Text;
 
 namespace Aoc2023Cs;
 
+using Vec2 = Vec2L;
+
 public class Day18
 {
     public static bool partOne = true;
@@ -10,13 +12,12 @@ public class Day18
     public static void Run(int part)
     {
         partOne = (part == 1);
-        string[] lines = "18".ReadLinesArray(test: false);
+        string[] lines = "18".ReadLinesArray(test: true);
 
         Dig dig = new(lines);
         Console.WriteLine(dig);
-        File.WriteAllText("after.txt", dig.ToString());
-
-        int result = dig.CountDug();
+        long result = dig.Count();
+        
         string partName = partOne ? "One" : "Two";
         Console.WriteLine($"Part {partName}: {result}");
         
@@ -24,141 +25,160 @@ public class Day18
 
     public class Dig
     {
-        public char[,] fields;
-
-        public int width => fields.GetLength(0);
-        public int height => fields.GetLength(1);
-
-        public Dig(string[] lines)
+        public class Span
         {
-            Vec2 pos = Vec2.zero;
-            Vec2 max = new (int.MinValue, int.MinValue);
-            Vec2 min = new (int.MaxValue, int.MaxValue);
-            foreach (string line in lines)
+            public readonly Vec2 from;
+            public readonly Vec2 to;
+            public bool IsHorizontal => (from.x != to.x);
+            public long Length => (from.x != to.x) ? (to.x - from.x) : (to.y - from.y);
+
+            public Span(Vec2 from, Vec2 to)
             {
-                var parts = line.Split(' ');
-                Vec2 dir = FromDir(parts[0][0]) * int.Parse(parts[1]);
-                pos += dir;
-                min = Vec2.Min(min, pos);
-                max = Vec2.Max(max, pos);
+#if false                
+                if ((from.x > to.x) || (from.y > to.y)) (from, to) = (to, from);
+#endif
+                if (from.y != to.y)
+                {
+                    to.y -= long.Sign(to.y - from.y);
+                }
+
+                if (from.x != to.x)
+                {
+                    to.x -= long.Sign(to.x - from.x);
+                }
+                
+                this.from = from;
+                this.to = to;
             }
 
-            int margin = 0;
-            min -= new Vec2(margin, margin);
-            max += new Vec2(margin, margin);
-            
-            Vec2 dim = max - min + new Vec2(1, 1);
-            
-            fields = new char[dim.x, dim.y];
-            for (int y = 0; y < height; y++)
-                for (int x = 0; x < width; x++)
-                    fields[x, y] = '.';
-            
-            pos = Vec2.zero;
-            foreach (string line in lines)
-            {
-                var parts = line.Split(' ');
-                Vec2 dir = FromDir(parts[0][0]) * int.Parse(parts[1]);
-                if (dir.IsVertical)
-                {
-                    DrawVLine(pos - min, pos - min + dir);
-                }
-                pos += dir;
-            }
+            public override int GetHashCode() => HashCode.Combine(from, to);
 
-            Fill();
-            
-            pos = Vec2.zero;
-            foreach (string line in lines)
+            public override string ToString()
             {
-                var parts = line.Split(' ');
-                Vec2 dir = FromDir(parts[0][0]) * int.Parse(parts[1]);
-                if (dir.IsHorizontal)
-                {
-                    DrawHLine(pos - min, pos - min + dir);
-                }
-                pos += dir;
+                string dirLabel = IsHorizontal ? "HSpan" : "VSpan";
+                return $"{dirLabel}: {from} {to}";
             }
         }
 
-        public void DrawVLine(Vec2 from, Vec2 to)
+        public SortedList<long, List<Span>> spanLines = new ();
+
+        public void Add(Vec2 from, Vec2 to)
         {
-            if (from.y > to.y) (from, to) = (to, from);
-            for (int y = from.y; y < to.y; ++y)
+            Span span = new(from, to);
+            long[] linesToAdd = span.IsHorizontal ? [span.from.y] : [span.from.y, span.to.y];
+            foreach (long line in linesToAdd)
             {
-                fields[from.x, y] = '#';
+                spanLines.MultiAdd(line, span);
+                Console.WriteLine($"[{line}] {span}");
             }
+        }
+
+        public Vec2 Decode(string coded)
+        {
+            long len = Convert.ToInt64(coded[2..7], 16);
+            int dirI = Convert.ToInt32(coded[7..8], 16);
+            switch (dirI)
+            {
+                case 0: return Vec2.right * len;
+                case 1: return Vec2.down * len;
+                case 2: return Vec2.left * len;
+                case 3: return Vec2.up * len;
+            }
+            Debug.Fail("");
+            return Vec2.zero;
         }
         
-        public void DrawHLine(Vec2 from, Vec2 to)
+        Vec2 min;
+        Vec2 max;
+        
+        public Dig(string[] lines)
         {
-            if (from.x > to.x) (from, to) = (to, from);
-            for (int x = from.x; x <= to.x; ++x)
+            min = Vec2.MaxValue;
+            max = Vec2.MinValue;
+            Vec2 pos = Vec2.zero;
+            foreach (string line in lines)
             {
-                fields[x, from.y] = '#';
+                min = min.Min(pos);
+                max = max.Max(pos);
+                var parts = line.Split(' ');
+                Vec2 dir;
+                if (partOne)
+                {
+                    dir = FromDir(parts[0][0]) * long.Parse(parts[1]);
+                }
+                else
+                {
+                    dir = Decode(parts[2]);
+                }
+
+                Add(pos, pos + dir);
+                pos += dir;
             }
         }
 
-        public void Xor(Vec2 pos) => fields[pos.x, pos.y] = (fields[pos.x, pos.y] == '#') ? '.' : '#';
+        public long Count()
+        {
+            long result = 0;
 
-        public ref char this[Vec2 pos] => ref fields[pos.x, pos.y];
+            long lastVSpanResult = 0;
+            long lastY = spanLines.Keys.First()-1;
+            SortedList<long, Span> activeSpans = new ();
+            foreach ((long y, List<Span> spans) in spanLines)
+            {
+                long catchUp = (y - lastY) * lastVSpanResult;
+                if (lastVSpanResult != 0)
+                {
+                    Console.WriteLine($"[{lastY+1}-{y}] : {lastVSpanResult} = {catchUp}");
+                }
+                // accumulate vspans in last lines 
+                result += catchUp;
+
+                long lineResult = 0;
+
+                foreach (Span span in spans)
+                {
+                    if (!activeSpans.Remove(span.from.x))
+                    {
+                        activeSpans.Add(span.from.x, span);
+                    };
+                }
+
+                lastVSpanResult = 0;
+                bool fill = false;
+                long lastX = 0;
+                foreach ((long x, var aSpan) in activeSpans)
+                {
+                    if (fill)
+                    {
+                        lastVSpanResult += x - lastX + 1;
+                    }
+
+                    fill = !fill;
+
+                    lastX = x;
+                }
+
+                lineResult += lastVSpanResult;
+                Console.WriteLine($"[{y}] : {lineResult}");
+                result += lineResult;
+
+                foreach (Span span in spans.Where(span => span.IsHorizontal))
+                {
+                    activeSpans.Remove(span.from.x);
+                }
+
+                
+                lastY = y;
+            }
             
-        public bool InBounds(Vec2 pos)
-        {
-            return (pos.x >= 0) && (pos.y >= 0) && (pos.x < width) && (pos.y < height);
-        }
-
-        public int CountDug()
-        {
-            int result = 0;
-            foreach (char field in fields)
-            {
-                if (field == '#') ++result;
-            }
+            Debug.Assert(activeSpans.Count == 0);
             return result;
         }
 
-        public void Fill()
-        {
-            for (int y = 0; y < height; ++y)
-            {
-                bool fill = false;
-                int x = 0;
-                while (x < width)
-                {
-                    while (fields[x, y] == '.')
-                    {
-                        if (fill) { fields[x, y] = '#'; }
-                        if (++x >= width) break;
-                    }
-                    if (x >= width) break;
-
-                    int hashes = 0;
-                    while (fields[x, y] == '#')
-                    {
-                        ++hashes;
-                        if (++x >= width) break;
-                    }
-
-                    if (hashes == 1)
-                    {
-                        fill = !fill;
-                    }
-                }
-            }
-        }
-        
         public override string ToString()
         {
             StringBuilder sb = new();
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    sb.Append(fields[x, y]);
-                }
-                sb.AppendLine();
-            }
+            sb.AppendLine($"size: {max-min} ({min} - {max}), {spanLines.Count} spans");
             return sb.ToString();
         }
         

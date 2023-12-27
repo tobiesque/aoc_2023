@@ -1,5 +1,7 @@
-﻿using System.Globalization;
+﻿using System.Collections;
+using System.Globalization;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -269,6 +271,84 @@ public static class Util
             value = x;
         }
         return maxSource;
+    }
+    
+    public static void MultiAdd<TKey, TValue, TContainer>(this TContainer multiSortedList, TKey key, TValue value)
+                       where TKey : notnull where TValue : notnull where TContainer : IDictionary<TKey, List<TValue>> 
+    {
+        multiSortedList.RetrieveList<TKey, TValue, TContainer>(key).Add(value);
+    }
+    
+    public static void MultiRemove<TKey, TValue, TContainer>(this TContainer multiSortedList, TKey key, TValue value)
+        where TKey : notnull where TValue : notnull where TContainer : IDictionary<TKey, List<TValue>>
+    {
+        var list = multiSortedList.RetrieveList<TKey, TValue, TContainer>(key);
+        list.Remove(value);
+        if (list.Count == 0)
+        {
+            multiSortedList.Remove(key);
+        }
+    }
+    
+    public static List<TValue> RetrieveList<TKey, TValue, TContainer>(this TContainer multiSortedList, TKey key)
+        where TKey : notnull where TValue : notnull where TContainer : IDictionary<TKey, List<TValue>>
+    {
+        if (!multiSortedList.TryGetValue(key, out var values))
+        {
+            values = new List<TValue>();
+            multiSortedList[key] = values;
+        }
+        return values;
+    }
+    
+    public static void MultiCopyTo<TKey, TValue>(this IDictionary<TKey, List<TValue>> that, IDictionary<TKey, List<TValue>> other)
+        where TKey : notnull where TValue : notnull
+    {
+        foreach (var kvp in that)
+        {
+            other.Add(kvp.Key, kvp.Value.ToList());
+        }
+    }
+
+    public static UInt64 ToUInt64(this BitArray bitArray)
+    {
+        int[] intArray = bitArray.GetInternalArray();
+        uint[] uintArray = Unsafe.As<int[], uint[]>(ref intArray);
+        return (UInt64)(uintArray[0]) + (((UInt64)(uintArray[1]))<<32);
+    }
+    
+    public static bool IsEqual(this BitArray left, BitArray right)
+    {
+        if (left.Length != right.Length) return false;
+        return left.GetInternalArray().SequenceEqual(right.GetInternalArray());
+    }
+
+    private static readonly FieldInfo? bitArrayInternalArray = typeof(BitArray).GetField("m_array", BindingFlags.NonPublic | BindingFlags.Instance);
+
+    public static int[] GetInternalArray(this BitArray bitArray)
+    {
+        if (bitArrayInternalArray == null) return [];
+        object? intArray = bitArrayInternalArray.GetValue(bitArray);
+        return (intArray != null) ? (int[])intArray : [];
+    }
+    
+    public static int GetHashCodeExt(this BitArray bitArray)
+    {
+        int result = 0;
+        int[] intArray = bitArray.GetInternalArray();
+        int i = 0;
+        for (; i < bitArray.Length / 32; ++i)
+        {
+            result = HashCode.Combine(result, intArray[i]);
+        }
+        
+        if ((bitArray.Length % 32) != 0)
+        {
+            int r = intArray[i] >> (bitArray.Length % 32);
+            result = HashCode.Combine(result, r);
+        }
+
+        return result;
     }
     
     public static List<string> ReadLinesList(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToList();

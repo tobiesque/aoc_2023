@@ -1,19 +1,14 @@
 ﻿using System.Reflection;
-
-int day = 18;
-int part = 1;
-
-
+using Aoc2023Cs;
 
 string binPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location!)!;
 Directory.SetCurrentDirectory(binPath);
 
-Type? dayClass = Type.GetType($"Aoc2023Cs.Day{day}");
+Type? dayClass = Type.GetType($"Aoc2023Cs.Day{Day.day}");
 if (dayClass == null)
 {
-    string partStr = (part == 1) ? "one" : "two";
-    dayClass = Type.GetType($"Aoc2023Cs.Day{day}{partStr}")!;
+    dayClass = Type.GetType($"Aoc2023Cs.Day{Day.day}{Day.PartStr.ToLower()}")!;
 }
 MethodInfo runMethod = dayClass.GetMethod("Run")!;
-object?[]? argument = ( runMethod.GetParameters().Length != 0 ) ? new [] { (object?)part } : null;
+object?[]? argument = ( runMethod.GetParameters().Length != 0 ) ? new [] { (object?)Day.part } : null;
 runMethod.Invoke(null, argument );

@@ -16,6 +16,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <PackageReference Include="GraphSharp" Version="1.1.0" />
+      <PackageReference Include="Neo4j.Driver" Version="5.15.0" />
+      <PackageReference Include="Neo4j.Driver.Simple" Version="5.15.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 </Project>

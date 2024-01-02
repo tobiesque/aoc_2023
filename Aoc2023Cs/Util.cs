@@ -310,6 +310,13 @@ public static class Util
         }
     }
 
+    public static string Bin<T>(this T number, int bits) where T : IBinaryInteger<T>, IConvertible
+    {
+        string str = Convert.ToString(number.ToInt64(null), 2);
+        str = string.Format("{0, " + bits + "}", str);
+        return str.Replace(' ', '0');
+    }
+
     public static UInt64 ToUInt64(this BitArray bitArray)
     {
         int[] intArray = bitArray.GetInternalArray();

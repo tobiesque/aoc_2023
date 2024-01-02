@@ -103,7 +103,7 @@ public class Day20
                 return false;
             }
 
-            public string PatternToString() => string.Format("{0," + (48 - bitIndex) + "} {1}{2}", 
+            public string PatternToString() => string.Format("{0," + bitIndex + "} {1}{2}", 
                                                              "^",
                                                              '0'.Replicate(patternZeroes), 
                                                              '1'.Replicate(patternOnes));
@@ -232,7 +232,11 @@ public class Day20
             }
 
             PrintState(state, 0);
-            if (!Day.PartOne)
+
+            var startC = ConjunctionStates();
+            Console.WriteLine($"Conjunctions: {ConjunctionsToString()}");
+            
+            if (!Day.PartOne && false)
             {
                 WorkOutPatterns();
             }
@@ -242,8 +246,13 @@ public class Day20
                 PressButton();
                 PrintState(state, i);
                 Console.WriteLine($"Conjunctions: {ConjunctionsToString()}");
+
+                if (startC.SequenceEqual(ConjunctionStates()))
+                {
+                    Console.WriteLine("CCycle");
+                }
                 
-                if (!Day.PartOne)
+                if (!Day.PartOne && false)
                 {
                     WorkOutPatterns();
                     if (workedOutPatterns == 48)
@@ -330,7 +339,7 @@ public class Day20
             int i = 0;
             foreach (var conjunction in modules.Values.OfType<FlipFlop>())
             {
-                conjunction.bitIndex = i;
+                conjunction.bitIndex = 48 - i;
                 ++i;
             }
             
@@ -351,7 +360,8 @@ public class Day20
         
         public string ConjunctionsToString()
         {
-            return string.Join(", ", modules.Values.OfType<Conjunction>().Select(m => m.inputs.Length - m.pulseMemory.Count));
+            return string.Join(", ", modules.Values.OfType<Conjunction>().Select(m => 
+                                        (m.pulseMemory.Count).Bin(4)));
         }
         
         public BitArray FlipFlopStates()

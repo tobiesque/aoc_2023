@@ -31,7 +31,14 @@ public class Day18
             public readonly Vec2 to;
             public bool IsHorizontal => (from.x != to.x);
             public long Length => (from.x != to.x) ? (to.x - from.x) : (to.y - from.y);
+            public long LengthH => Math.Abs(to.x - from.x);
+            public long LengthV => Math.Abs(to.y - from.y);
 
+            public bool IsConnectedTo(Span other)
+            {
+                return (other.from == from) || (other.to == from) || (other.from == to) || (other.to == to);
+            }
+            
             public Span(Vec2 from, Vec2 to)
             {
 #if false                
@@ -60,11 +67,14 @@ public class Day18
             }
         }
 
+        public List<Span> spans = new ();
         public SortedList<long, List<Span>> spanLines = new ();
 
         public void Add(Vec2 from, Vec2 to)
         {
             Span span = new(from, to);
+            spans.Add(span);
+            
             long[] linesToAdd = span.IsHorizontal ? [span.from.y] : [span.from.y, span.to.y];
             foreach (long line in linesToAdd)
             {
@@ -114,6 +124,47 @@ public class Day18
                 Add(pos, pos + dir);
                 pos += dir;
             }
+        }
+
+        public long IterateAreas()
+        {
+            SortedList<long, Span> horizontals = new();
+            SortedList<long, Span> verticals = new();
+            
+            long area = 0L;
+            foreach (var line in spans)
+            {
+                if (line.IsHorizontal)
+                {
+                    horizontals.Add(line.from.x, line);
+                }
+                else
+                {
+                    verticals.Add(line.from.y, line);
+                }
+            }
+
+            bool fillVertical = true;
+            foreach (var (_, vertical) in verticals)
+            {
+                bool fillHorizontal = false;
+                foreach (var (_, horizontal) in horizontals)
+                {
+                    area += Visit(horizontal, vertical, ref fillHorizontal, ref fillVertical);
+                }
+            }
+            return area;
+        }
+        
+        public long Visit(Span horizontal, Span vertical, ref bool fillHorizontal, ref bool fillVertical)
+        {
+            if (horizontal.IsHorizontal)
+            fillHorizontal = !fillHorizontal;
+            if (fillHorizontal && fillVertical)
+            {
+                return horizontal.LengthH * vertical.LengthV;
+            }
+            return 0L;
         }
 
         public long Count()

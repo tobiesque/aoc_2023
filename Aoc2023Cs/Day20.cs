@@ -12,6 +12,9 @@ public class Day20
 
         
         Machines machines = new(lines);
+        machines.WriteCsv("machines.csv");
+        return;
+        
         Console.WriteLine(machines);
 
         if (Day.PartOne)
@@ -344,7 +347,7 @@ public class Day20
             }
             
             rx = modules.Values.First(m => m.name == "rx");
-            Console.WriteLine($"rx is a {rx.GetType().ToString()} with {rx.inputs.Length} inputs");
+            // Console.WriteLine($"rx is a {rx.GetType().ToString()} with {rx.inputs.Length} inputs");
 
             if (!Day.PartOne)
             {
@@ -384,27 +387,17 @@ public class Day20
             return sb.ToString();
         }
         
-        public void WriteDot(string filename)
+        public void WriteCsv(string filename)
         {
             StringBuilder sb = new();
-            sb.AppendLine("digraph day20 {");
-            sb.AppendLine("\tnode [fontsize=25.0 width=0.5];");
+            sb.AppendLine("name_from,name_to");
             foreach (Module from in modules.Values)
             {
-                sb.Append($"\t{from.name}");
-                if (from.name == "rx")                          sb.Append("[shape=tripleoctagon]");
-                else if (from.GetType() == typeof(FlipFlop))    sb.Append("[shape=triangle]");
-                else if (from.GetType() == typeof(Conjunction)) sb.Append("[shape=circle]");
-                else if (from.GetType() == typeof(Output))      sb.Append("[shape=terminator]");
-                else                                            sb.Append("[shape=diamond]");
-                sb.AppendLine(";");
-
                 foreach (Module to in from.destinations)
                 {
-                    sb.AppendLine($"\t{from.name} -> {to.name};");
+                    sb.AppendLine($"\t{from.name},{to.name}");
                 }
             }
-            sb.AppendLine("}");
             File.WriteAllText(filename, sb.ToString());
         }
     }

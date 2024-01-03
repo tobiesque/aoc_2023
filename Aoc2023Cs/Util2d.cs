@@ -26,7 +26,7 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public static Vec2<T> down = new (T.Zero, T.One);
     public static Vec2<T> left = new (-T.One, T.Zero);
     public static Vec2<T> right = new (T.One, T.Zero);
-    public static Vec2<T>[] directions = [Vec2<T>.right, Vec2<T>.down, Vec2<T>.left, Vec2<T>.up];
+    public static Vec2<T>[] directions = [right, down, left, up];
 
     public char DirectionChar
     {

@@ -26,7 +26,7 @@ public class Day21
             bool onTheEdge = false;
             foreach (var pos in positions2)
             {
-                foreach (var dir in Vec2.directions)
+                foreach (var dir in Vec2.Directions)
                 {
                     Vec2 newPos = pos + dir;
                     onTheEdge |= !map.InBounds(newPos); 
@@ -113,7 +113,7 @@ public class Day21
 
         public void Step(Vec2 pos)
         {
-            foreach (var dir in Vec2.directions)
+            foreach (var dir in Vec2.Directions)
             {
                 Vec2 newPos = pos + dir;
                 if (InBounds(newPos) && (this[newPos] != '#'))

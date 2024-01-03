@@ -16,7 +16,7 @@ public class Day16
 
         if (partOne)
         {
-            grid.LightWalk(Vec2.zero, Vec2.right );
+            grid.LightWalk(Vec2.Zero, Vec2.Right );
             Console.WriteLine(grid);
             Console.WriteLine();
             Console.WriteLine(grid.ToStringDirection());
@@ -29,25 +29,25 @@ public class Day16
         long result = 0;
         for (int y = 0; y < grid.height; ++y)
         {
-            grid.LightWalk(new (0, y), Vec2.right);
+            grid.LightWalk(new (0, y), Vec2.Right);
             result = long.Max(result, grid.NumEnergized);
         }
         
         for (int y = 0; y < grid.height; ++y)
         {
-            grid.LightWalk(new (grid.width - 1, y), Vec2.left);
+            grid.LightWalk(new (grid.width - 1, y), Vec2.Left);
             result = long.Max(result, grid.NumEnergized);
         }
         
         for (int x = 0; x < grid.width; ++x)
         {
-            grid.LightWalk(new (x, 0), Vec2.down);
+            grid.LightWalk(new (x, 0), Vec2.Down);
             result = long.Max(result, grid.NumEnergized);
         }
         
         for (int x = 0; x < grid.width; ++x)
         {
-            grid.LightWalk(new (x, grid.height - 1), Vec2.up);
+            grid.LightWalk(new (x, grid.height - 1), Vec2.Up);
             result = long.Max(result, grid.NumEnergized);
         }
         Console.WriteLine($"Part Two: {result}");
@@ -70,30 +70,30 @@ public class Day16
                 case '-':
                     {
                         if (inVector.IsHorizontal) return inVector;
-                        splitVector = Vec2.left;
-                        return Vec2.right;
+                        splitVector = Vec2.Left;
+                        return Vec2.Right;
                     }
                 case '|':
                     {
                         if (inVector.IsVertical) return inVector;
-                        splitVector = Vec2.up;
-                        return Vec2.down;
+                        splitVector = Vec2.Up;
+                        return Vec2.Down;
                     }
                 case '\\':
                     {
-                        if (inVector == Vec2.up) return Vec2.left;
-                        if (inVector == Vec2.down) return Vec2.right;
-                        if (inVector == Vec2.left) return Vec2.up;
-                        if (inVector == Vec2.right) return Vec2.down;
+                        if (inVector == Vec2.Up) return Vec2.Left;
+                        if (inVector == Vec2.Down) return Vec2.Right;
+                        if (inVector == Vec2.Left) return Vec2.Up;
+                        if (inVector == Vec2.Right) return Vec2.Down;
                         Debug.Fail("Invalid direction");
                         return Vec2.invalid;
                     }
                 case '/':
                     {
-                        if (inVector == Vec2.up) return Vec2.right;
-                        if (inVector == Vec2.down) return Vec2.left;
-                        if (inVector == Vec2.left) return Vec2.down;
-                        if (inVector == Vec2.right) return Vec2.up;
+                        if (inVector == Vec2.Up) return Vec2.Right;
+                        if (inVector == Vec2.Down) return Vec2.Left;
+                        if (inVector == Vec2.Left) return Vec2.Down;
+                        if (inVector == Vec2.Right) return Vec2.Up;
                         Debug.Fail("Invalid direction");
                         return Vec2.invalid;
                     }

@@ -157,7 +157,12 @@ public static class Util
         }
         return sum;
     }
-    
+
+    public class ReverseComparer<T> : Comparer<T> where T : IBinaryNumber<T>
+    {
+        public override int Compare(T x, T y) => -(x.CompareTo(y));
+    }
+
     public static string Append(this string s, char c) => s + c;
 
     public static bool Between<T>(this T value, T min, T size) where T : INumber<T> => (value >= min) && (value >= (min+size));
@@ -273,16 +278,18 @@ public static class Util
         return maxSource;
     }
     
-    public static void MultiAdd<TKey, TValue, TContainer>(this TContainer multiSortedList, TKey key, TValue value)
-                       where TKey : notnull where TValue : notnull where TContainer : IDictionary<TKey, List<TValue>> 
+    public static void MultiAdd<TKey, TValue, TList>(this IDictionary<TKey, TList> multiSortedList, TKey key, TValue value)
+                       where TKey : notnull where TValue : notnull
+                       where TList : ICollection<TValue>, new()
     {
-        multiSortedList.RetrieveList<TKey, TValue, TContainer>(key).Add(value);
+        multiSortedList.RetrieveList<TKey, TValue, TList>(key).Add(value);
     }
     
-    public static void MultiRemove<TKey, TValue, TContainer>(this TContainer multiSortedList, TKey key, TValue value)
-        where TKey : notnull where TValue : notnull where TContainer : IDictionary<TKey, List<TValue>>
+    public static void MultiRemove<TKey, TValue, TList>(this IDictionary<TKey, TList> multiSortedList, TKey key, TValue value)
+        where TKey : notnull where TValue : notnull
+        where TList : ICollection<TValue>, new()
     {
-        var list = multiSortedList.RetrieveList<TKey, TValue, TContainer>(key);
+        var list = multiSortedList.RetrieveList<TKey, TValue, TList>(key);
         list.Remove(value);
         if (list.Count == 0)
         {
@@ -290,23 +297,27 @@ public static class Util
         }
     }
     
-    public static List<TValue> RetrieveList<TKey, TValue, TContainer>(this TContainer multiSortedList, TKey key)
-        where TKey : notnull where TValue : notnull where TContainer : IDictionary<TKey, List<TValue>>
+    public static ICollection<TValue> RetrieveList<TKey, TValue, TList>(this IDictionary<TKey, TList> multiSortedList, TKey key)
+        where TKey : notnull where TValue : notnull
+        where TList : ICollection<TValue>, new()
     {
         if (!multiSortedList.TryGetValue(key, out var values))
         {
-            values = new List<TValue>();
+            values = new TList();
             multiSortedList[key] = values;
         }
         return values;
     }
     
-    public static void MultiCopyTo<TKey, TValue>(this IDictionary<TKey, List<TValue>> that, IDictionary<TKey, List<TValue>> other)
-        where TKey : notnull where TValue : notnull
+    public static void MultiCopyTo<TKey, TValue, TList>(this IDictionary<TKey, TList> that, IDictionary<TKey, TList> other)
+        where TKey : notnull
+        where TValue : notnull
+        where TList : IList<TValue>, new()
     {
         foreach (var kvp in that)
         {
-            other.Add(kvp.Key, kvp.Value.ToList());
+            TList? newList = (TList?)Activator.CreateInstance(typeof(TList), [ kvp.Value ]);
+            other.Add(kvp.Key, newList!);
         }
     }
 

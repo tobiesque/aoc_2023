@@ -17,7 +17,7 @@ public class Day14
         if (partOne)
         {
             Console.WriteLine($"{platform}");
-            platform.Move(Vec2.up);
+            platform.Move(Vec2.Up);
             Console.WriteLine($"{platform}");
 
             Console.WriteLine($"Part One: {platform.Load()}");
@@ -36,10 +36,10 @@ public class Day14
             long iterations = 1000000000;
             for (long i = 0; i < iterations; ++i)
             {
-                platform.Move(Vec2.up);
-                platform.Move(Vec2.left);
-                platform.Move(Vec2.down);
-                platform.Move(Vec2.right);
+                platform.Move(Vec2.Up);
+                platform.Move(Vec2.Left);
+                platform.Move(Vec2.Down);
+                platform.Move(Vec2.Right);
 
                 hashCode = platform.HashCode();
                 if (!hashes.TryAdd(hashCode, i))
@@ -67,10 +67,10 @@ public class Day14
             long newIterations = (iterations - offset) % modulo;
             for (long i = 0; i < newIterations; ++i)
             {
-                platform.Move(Vec2.up);
-                platform.Move(Vec2.left);
-                platform.Move(Vec2.down);
-                platform.Move(Vec2.right);
+                platform.Move(Vec2.Up);
+                platform.Move(Vec2.Left);
+                platform.Move(Vec2.Down);
+                platform.Move(Vec2.Right);
             }
             
             Console.WriteLine($"{platform}");

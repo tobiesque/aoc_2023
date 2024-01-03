@@ -21,4 +21,8 @@
       <PackageReference Include="Neo4j.Driver.Simple" Version="5.15.0" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="3rdParty\" />
+    </ItemGroup>
 </Project>

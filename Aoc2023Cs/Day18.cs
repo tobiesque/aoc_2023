@@ -89,13 +89,13 @@ public class Day18
             int dirI = Convert.ToInt32(coded[7..8], 16);
             switch (dirI)
             {
-                case 0: return Vec2.right * len;
-                case 1: return Vec2.down * len;
-                case 2: return Vec2.left * len;
-                case 3: return Vec2.up * len;
+                case 0: return Vec2.Right * len;
+                case 1: return Vec2.Down * len;
+                case 2: return Vec2.Left * len;
+                case 3: return Vec2.Up * len;
             }
             Debug.Fail("");
-            return Vec2.zero;
+            return Vec2.Zero;
         }
         
         Vec2 min;
@@ -105,7 +105,7 @@ public class Day18
         {
             min = Vec2.MaxValue;
             max = Vec2.MinValue;
-            Vec2 pos = Vec2.zero;
+            Vec2 pos = Vec2.Zero;
             foreach (string line in lines)
             {
                 min = min.Min(pos);
@@ -235,11 +235,11 @@ public class Day18
         
         public static Vec2 FromDir(char dir)
         {
-            if (dir == 'R') return Vec2.right;
-            if (dir == 'D') return Vec2.down;
-            if (dir == 'L') return Vec2.left;
-            if (dir == 'U') return Vec2.up;
-            return Vec2.zero;
+            if (dir == 'R') return Vec2.Right;
+            if (dir == 'D') return Vec2.Down;
+            if (dir == 'L') return Vec2.Left;
+            if (dir == 'U') return Vec2.Up;
+            return Vec2.Zero;
         }
     }
 }

@@ -2,8 +2,8 @@
 
 public static class Day
 {
-    public static int day = 21;
-    public static int part = 2;
+    public static int day = 22;
+    public static int part = 1;
     public static bool test = true;
     
     public static bool PartOne => part == 1;

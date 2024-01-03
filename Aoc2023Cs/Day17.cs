@@ -235,7 +235,7 @@ public class Day17
 
         private void FillNode(Node node)
         {
-            Vec2[] directions = node.isHorizontal ? [Vec2.down, Vec2.up] : [Vec2.right, Vec2.left];
+            Vec2[] directions = node.isHorizontal ? [Vec2.Down, Vec2.Up] : [Vec2.Right, Vec2.Left];
             
             foreach (Vec2 direction in directions)
             {

@@ -9,12 +9,25 @@ public class Day23
     {
         var lines = Day.Str.ReadLinesArray(test: false);
         Map map = new(lines);
-        Console.WriteLine(map);
-        // Map.Context2 context = new();
-        // map.Walk(context, map.startPos, 0);
-        var path = map.Walk();
-        Console.WriteLine(map.ToString(path));
-        Console.WriteLine($"Day {Day.PartStr}: {path.Count-1}");
+        if (Day.PartOne)
+        {
+            Console.WriteLine(map);
+            Map.Context context = new();
+            map.Walk(context, map.startPos, 0);
+            var path = context.longestPath;
+            Console.WriteLine(map);
+            Console.WriteLine($"Day {Day.PartStr}: {path.Count-1}");
+        }
+        else
+        {
+            map.CreateNetwork();
+            map.WriteDot();
+            var path = map.WalkNetwork();
+            Console.WriteLine(map.ToStringNodes(path));
+            var pathStr = path.MakeList("\n");
+            Console.WriteLine(pathStr);
+            Console.WriteLine($"Day {Day.PartStr}: {path.Sum(p => p.length)}");
+        }
     }
 
     public class Map
@@ -37,10 +50,151 @@ public class Day23
         
         public int Width => tiles.GetLength(0);
         public int Height => tiles.GetLength(1);
-        public Tile this[Vec2 pos] => tiles[pos.x, pos.y];
-        public bool InBounds(Vec2 pos) => (pos.x >= 0) && (pos.x < Width) && (pos.y >= 0) && (pos.y < Height);
+        public Tile this[Vec2 pos] => tiles[pos.x-1, pos.y-1];
+        public bool InBounds(Vec2 pos) => (pos.x >= 1) && (pos.x <= Width) && (pos.y >= 1) && (pos.y <= Height);
+        public bool IsValid(Vec2 pos) => (InBounds(pos) && this[pos].Walkable);
+        
+        public class Node
+        {
+            public Vec2 pos;
+            public readonly Connection?[] connections = new Connection?[4];
+            public IEnumerable<Connection> Connections => connections.OfType<Connection>();
+        }
 
-        public class Context2
+        public class Connection()
+        {
+            public Vec2 from = Vec2.Zero;
+            public Vec2 to = Vec2.Zero;
+            public int length = 0;
+
+            public override string ToString()
+            {
+                return $"[{from}->{to}, {length}]";
+            }
+        }
+
+        public Dictionary<Vec2, Node> network = new();
+
+        public void CreateNetwork()
+        {
+            for (int y = 1; y <= Height; ++y)
+            {
+                for (int x = 1; x <= Width; ++x)
+                {
+                    Vec2 pos = new(x, y);
+                    if (!this[pos].Walkable) continue;
+                    if ((pos != startPos) && (pos != endPos))
+                    {
+                        int numConnections = Vec2.Directions.Select(dir => pos + dir).Count(IsValid);
+                        if (numConnections is > 0 and < 3) continue;
+                    }
+
+                    Node node = new () { pos = pos };
+                    network.Add(pos, node);
+                    Console.WriteLine($"{pos}");
+                }
+            }
+
+            foreach (var node in network.Values)
+            {
+                Vec2 pos = node.pos;
+                for (var i = 0; i < Vec2.Directions.Length; i++)
+                {
+                    if (node.connections[i] != null) continue;
+                    Vec2 newPos = pos + Vec2.Directions[i];
+                    if (!IsValid(pos + Vec2.Directions[i])) continue;
+
+                    // scan and find next node in that direction
+                    int length = 0;
+                    Vec2 scanPos = newPos;
+                    Vec2 lastPos = pos;
+                    while (true)
+                    {
+                        ++length;
+                        int connectionCount = 0;
+                        var connections = Vec2.Directions.Select(dir => scanPos + dir)
+                                                         .Where(p => (p != lastPos))
+                                                         .Where(IsValid)
+                                                         .ToArray();
+                        connectionCount = connections.Length;
+                        if (connectionCount == 1)
+                        {
+                            lastPos = scanPos;
+                            scanPos = connections.First();
+                        }
+
+                        if (connectionCount != 1)
+                        {
+                            Debug.Assert(network.ContainsKey(scanPos));
+                            Debug.Assert(pos != scanPos);
+                            break;
+                        }
+                    }
+
+                    Debug.Assert(network.ContainsKey(scanPos));
+                    Debug.Assert(pos != scanPos);
+                    node.connections[i] = new() { from = pos, to = scanPos, length = length };
+                }
+            }
+        }
+        
+        public class NodeContext
+        {
+            public Connection connection;
+            public int length = 0;
+            public int depth = 0;
+            public HashSet<Connection> connectionPath = new ();
+            public HashSet<Vec2> path = new ();
+        }
+        
+        public HashSet<Connection> WalkNetwork()
+        {
+            Stack<NodeContext> stack = new();
+            stack.Push(new () {connection = new () {from = startPos, to = startPos, length = 0}});
+            int maxLength = 0;
+            HashSet<Connection> maxPath = new ();
+
+            int maxDepth = 0;
+            long i = 0;
+            while (stack.TryPop(out var context))
+            {
+                ++i;
+                if ((i % 10000) == 0)
+                {
+                    Console.Write($"{maxDepth}, {stack.Count}, {i}\r");
+                }
+
+                context.path.Add(context.connection.to);
+                context.connectionPath.Add(context.connection);
+                context.length += context.connection.length;
+                if (context.connection.to == endPos)
+                {
+                    if (context.length > maxLength)
+                    {
+                        maxLength = context.length;
+                        maxPath = [..context.connectionPath];
+                        Debug.Assert(maxLength == maxPath.Sum(c => c.length));
+                    }
+                    continue;
+                }
+
+                maxDepth = Math.Max(maxDepth, context.depth);
+                Node node = network[context.connection.to];
+                foreach (var connection in node.Connections)
+                {
+                    if (context.path.Contains(connection.to)) continue; 
+                    stack.Push(new() {connection = connection,
+                                      connectionPath = [..context.connectionPath],
+                                      path = [..context.path],
+                                      length = context.length, 
+                                      depth = context.depth + 1});
+                }
+            }
+
+            return maxPath;
+        }
+
+        public class Context
         {
             public HashSet<Vec2> path = new();
             
@@ -48,79 +202,7 @@ public class Day23
             public HashSet<Vec2> longestPath = new();
         }
 
-        public class Context
-        {
-            public Vec2 pos;
-            public int steps = 0;
-            public HashSet<Vec2> path = new();
-        }
-        
-        public HashSet<Vec2> Walk()
-        {
-            HashSet<Vec2> longestPath = new();
-            Vec2 maxPos = Vec2.Zero;
-
-            Stack<Context> stack = new(1000000);
-            stack.Push(new () { pos = startPos });
-
-            long i = 0;
-            
-            while (stack.TryPop(out var context))
-            {
-                ++i;
-                maxPos = maxPos.Max(context.pos);
-
-                if ((i % 10000) == 0)
-                {
-                    Console.Write($"{stack.Count}, {maxPos}/({Width}, {Height}), {i}\r");
-                }
-                
-                ++context.steps;
-                Tile tile = this[context.pos];
-                context.path.Add(context.pos);
-                
-                if (context.pos == endPos)
-                {
-                    if (context.path.Count > longestPath.Count)
-                    {
-                        longestPath = new(context.path);
-                    }
-                    context.path.Remove(context.pos);
-                }
-                else
-                {
-                    if (Day.PartOne && tile.IsSlope)
-                    {
-                        Vec2 newPos = context.pos + tile.Slope;
-                        if (InBounds(newPos))
-                        {
-                            Tile newTile = this[newPos];
-                            if (InBounds(newPos) && newTile.Walkable && !context.path.Contains(newPos))
-                            {
-                                stack.Push(new() { pos = newPos, path = new(context.path), steps = context.steps });
-                            }
-                        }
-                        context.path.Remove(context.pos);
-                    }
-
-                    foreach (var newPos in Vec2.Directions.Select(v => v + context.pos))
-                    {
-                        if (InBounds(newPos))
-                        {
-                            Tile newTile = this[newPos];
-                            if (newTile.Walkable && !context.path.Contains(newPos))
-                            {
-                                stack.Push(new() { pos = newPos, path = new(context.path), steps = context.steps });
-                            }
-                        }
-                    }
-                }
-            }
-
-            return longestPath;
-        }
-
-        public void Walk(Context2 context, Vec2 pos, int steps)
+        public void Walk(Context context, Vec2 pos, int steps)
         {
             Tile tile = this[pos];
 
@@ -142,8 +224,9 @@ public class Day23
             if (Day.PartOne && tile.IsSlope)
             {
                 Vec2 newPos = pos + tile.Slope;
+                if (!InBounds(newPos)) return; 
                 Tile newTile = this[newPos];
-                if (InBounds(newPos) && newTile.Walkable && !context.path.Contains(newPos))
+                if (newTile.Walkable && !context.path.Contains(newPos))
                 {
                     Walk(context, newPos, steps);
                 }
@@ -153,13 +236,11 @@ public class Day23
             
             foreach (var newPos in Vec2.Directions.Select(v => v + pos))
             {
-                if (InBounds(newPos))
+                if (!InBounds(newPos)) continue;
+                Tile newTile = this[newPos];
+                if (newTile.Walkable && !context.path.Contains(newPos))
                 {
-                    Tile newTile = this[newPos];
-                    if (InBounds(newPos) && newTile.Walkable && !context.path.Contains(newPos))
-                    {
-                        Walk(context, newPos, steps);
-                    }
+                    Walk(context, newPos, steps);
                 }
             }
             context.path.Remove(pos);
@@ -171,21 +252,16 @@ public class Day23
             int height = lines.Length;
             tiles = new Tile[width, height];
             
-            int y = 0;
+            int y = 1;
             foreach (var line in lines)
             {
-                int x = 0;
+                int x = 1;
                 foreach (var c in line)
                 {
-                    if ((y == 0) && (c == '.'))
-                    {
-                        startPos = new(x, y);
-                    } 
-                    if ((y == (Height-1)) && (c == '.'))
-                    {
-                        endPos = new(x, y);
-                    } 
-                    tiles[x++, y] = new (c);
+                    if ((y == 1) && (c == '.')) startPos = new(x, y); 
+                    if ((y == Height) && (c == '.')) endPos = new(x, y);
+                    tiles[x-1, y-1] = new (c);
+                    ++x;
                 }
                 ++y;
             }
@@ -199,23 +275,53 @@ public class Day23
         public string ToString(ICollection<Vec2> path)
         {
             StringBuilder sb = new();
-            for (int y = 0; y < Height; ++y)
+            for (int y = 1; y <= Height; ++y)
             {
-                for (int x = 0; x < Width; ++x)
+                for (int x = 1; x <= Width; ++x)
                 {
-                    if (path.Contains(new (x, y)))
-                    {
-                        sb.Append('O');
-                    }
-                    else
-                    {
-                        sb.Append(tiles[x, y].c);
-                    }
+                    sb.Append(path.Contains(new(x, y)) ? 'O' : this[new (x, y)].c);
                 }
-
                 sb.AppendLine();
             }
             return sb.ToString();
+        }
+
+        public string ToStringNodes(ICollection<Connection> path)
+        {
+            StringBuilder sb = new();
+            for (int y = 1; y <= Height; ++y)
+            {
+                for (int x = 1; x <= Width; ++x)
+                {
+                    sb.Append(path.Select(c => c.from).Contains(new(x, y)) ? '*' : this[new (x, y)].c);
+                }
+                sb.AppendLine();
+            }
+            return sb.ToString();
+        }
+        
+        public string Vec2ToDot(Vec2 pos)
+        {
+            if (pos == startPos) return "startPos";
+            if (pos == endPos) return "endPos";
+            return "P" + (pos + Vec2.One).ToString().RemoveChars('(', ')', ',').Replace(" ", "_");
+        }
+        
+        public void WriteDot()
+        {
+            StringBuilder sb = new();
+            sb.AppendLine("digraph day20 {");
+            // sb.AppendLine("\tnode [fontsize=25.0 width=0.5];");
+            foreach (Node node in network.Values)
+            {
+                foreach (var connection in node.Connections)
+                {
+                    sb.AppendLine($"{Vec2ToDot(connection.from)}->{Vec2ToDot(connection.to)} " +
+                                  $"[weight={connection.length} label={connection.length}]");
+                }
+            }
+            sb.AppendLine("}");
+            File.WriteAllText(Day.Str + ".dot", sb.ToString());
         }
     }
 }

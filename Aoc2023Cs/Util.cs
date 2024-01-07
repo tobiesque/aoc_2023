@@ -368,6 +368,15 @@ public static class Util
 
         return result;
     }
+
+    public static string RemoveChars(this string s, params char[] chars)
+    {
+        foreach (var c in chars)
+        {
+            s = s.Replace(c.ToString(), string.Empty);
+        }
+        return s;
+    }
     
     public static List<string> ReadLinesList(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToList();
     public static string[] ReadLinesArray(this string day, bool test = false) => ReadLinesEnumerable(day, test).ToArray();

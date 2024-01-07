@@ -20,6 +20,7 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public T y = -T.One;
 
     public static Vec2<T> Zero = new (T.Zero, T.Zero);
+    public static Vec2<T> One = new (T.One, T.One);
     public static Vec2<T> MaxValue = new (NumbersUtil<T>.GetMaxValue, NumbersUtil<T>.GetMaxValue);
     public static Vec2<T> MinValue = new (NumbersUtil<T>.GetMinValue, NumbersUtil<T>.GetMinValue);
     
@@ -28,6 +29,7 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public static Vec2<T> Left = new (-T.One, T.Zero);
     public static Vec2<T> Right = new (T.One, T.Zero);
     public static Vec2<T>[] Directions = [Right, Down, Left, Up];
+    public static int[] InverseIndices = [2, 3, 0, 1];
 
     public char DirectionChar
     {

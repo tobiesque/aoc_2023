@@ -9,6 +9,11 @@ using Newtonsoft.Json;
 
 namespace Aoc2023Cs;
 
+public static class NumbersUtil<TValue> {
+    public static TValue GetMaxValue => ((TValue)typeof(TValue).GetField("MaxValue")!.GetValue(null)!)!;
+    public static TValue GetMinValue => ((TValue)typeof(TValue).GetField("MinValue")!.GetValue(null)!)!;
+}
+
 public static class Util
 {
     public static TEnum ToEnum<TEnum>(this string s) where TEnum : Enum

@@ -1,14 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
 
-namespace Aoc2023Cs.Util2d;
+namespace Aoc2023Cs;
 
-public static class NumbersUtil<TValue> {
-    public static TValue GetMaxValue => ((TValue)typeof(TValue).GetField("MaxValue")!.GetValue(null)!)!;
-    public static TValue GetMinValue => ((TValue)typeof(TValue).GetField("MinValue")!.GetValue(null)!)!;
-}
-
-public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
+public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryNumber<T>
 {
     public Vec2(T x, T y)
     {
@@ -92,7 +87,7 @@ public struct Vec2<T> : IEqualityComparer<Vec2<T>> where T : IBinaryInteger<T>
     public override string ToString() => $"({x}, {y})";
 }
 
-public struct Box2<T> : IEqualityComparer<Box2<T>> where T : IBinaryInteger<T>
+public struct Box2<T> : IEqualityComparer<Box2<T>> where T : IBinaryNumber<T>
 {
     public Vec2<T> from;
     public Vec2<T> to;
@@ -140,7 +135,7 @@ public struct Box2<T> : IEqualityComparer<Box2<T>> where T : IBinaryInteger<T>
     public override string ToString() => $"{from}->{to}";
 }
 
-public struct Line2<T> : IEqualityComparer<Line2<T>> where T : IBinaryInteger<T>
+public struct Line2<T> : IEqualityComparer<Line2<T>> where T : IBinaryNumber<T>
 {
     public Vec2<T> from;
     public Vec2<T> to;

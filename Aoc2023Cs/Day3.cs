@@ -3,9 +3,6 @@
 using System.Diagnostics;
 using System.Text;
 
-using Vec2 = Util2d.Vec2<int>;
-using Line2 = Util2d.Line2<int>;
-
 public static class Day3
 {
     public class Part
